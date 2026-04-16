@@ -1,0 +1,38 @@
+[
+  {
+    "content": "Phase 1: Get integration playbooks (YouTube API v3 + Gemini)",
+    "status": "in_progress"
+  },
+  {
+    "content": "Phase 1: Setup guide for Google Cloud + YouTube OAuth credentials",
+    "status": "pending"
+  },
+  {
+    "content": "Phase 1: Build POC scripts (TTS + video generation + upload pipeline)",
+    "status": "pending"
+  },
+  {
+    "content": "Phase 1: Test E2E pipeline (generate video + upload)",
+    "status": "pending"
+  },
+  {
+    "content": "Phase 2: Design guidelines",
+    "status": "pending"
+  },
+  {
+    "content": "Phase 2: Backend API (FastAPI - jobs, runs, templates, analytics)",
+    "status": "pending"
+  },
+  {
+    "content": "Phase 2: Frontend Dashboard (React - queue, history, templates, settings)",
+    "status": "pending"
+  },
+  {
+    "content": "Phase 2: GitHub Actions workflows",
+    "status": "pending"
+  },
+  {
+    "content": "Phase 2: End-to-end testing with Testing Agent",
+    "status": "pending"
+  }
+]
