@@ -1,0 +1,93 @@
+name: YouTube Automation Daily
+
+on:
+  schedule:
+    # Runs daily at 5pm UTC (variable posting time - anti-detection)
+    - cron: '0 17 * * *'
+    - cron: '30 14 * * 2,4'  # Tues/Thu at 2:30pm UTC for variety
+  workflow_dispatch:
+    inputs:
+      topic:
+        description: 'Video topic (leave empty for auto-generated)'
+        required: false
+        default: ''
+      content_type:
+        description: 'Content type'
+        required: false
+        default: 'roblox'
+        type: choice
+        options:
+          - roblox
+          - curiosity
+          - story
+          - animated
+      language:
+        description: 'Language'
+        required: false
+        default: 'bilingual'
+        type: choice
+        options:
+          - bilingual
+          - es
+          - en
+      format:
+        description: 'Format'
+        required: false
+        default: 'short'
+        type: choice
+        options:
+          - short
+          - long
+
+jobs:
+  generate-and-upload:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install system dependencies (FFmpeg)
+        run: sudo apt-get install -y ffmpeg
+
+      - name: Install Python dependencies
+        run: |
+          pip install --upgrade pip
+          pip install \
+            emergentintegrations \
+            gtts \
+            moviepy \
+            pillow \
+            yt-dlp \
+            google-api-python-client \
+            google-auth-oauthlib \
+            google-auth-httplib2
+
+      - name: Run automation pipeline
+        env:
+          EMERGENT_LLM_KEY: ${{ secrets.EMERGENT_LLM_KEY }}
+          YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
+          YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
+          YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
+          VIDEO_TOPIC: ${{ github.event.inputs.topic || '' }}
+          CONTENT_TYPE: ${{ github.event.inputs.content_type || 'roblox' }}
+          LANGUAGE: ${{ github.event.inputs.language || 'bilingual' }}
+          FORMAT: ${{ github.event.inputs.format || 'short' }}
+          PIPELINE_OUTPUT_DIR: /tmp/yt_automation
+        run: |
+          python automation/run_daily.py
+
+      - name: Upload artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pipeline-logs-${{ github.run_id }}
+          path: /tmp/yt_automation/
+          retention-days: 3
