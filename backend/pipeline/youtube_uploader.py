@@ -143,32 +143,20 @@ def _upload_video_sync(
 
 
 def get_auth_url(client_id: str, client_secret: str, redirect_uri: str) -> str:
-    """Generate YouTube OAuth authorization URL."""
-    from google_auth_oauthlib.flow import Flow
+    """Generate YouTube OAuth authorization URL (no PKCE - simple flow)."""
+    from urllib.parse import urlencode
     
-    client_config = {
-        'web': {
-            'client_id': client_id,
-            'client_secret': client_secret,
-            'auth_uri': 'https://accounts.google.com/o/oauth2/auth',
-            'token_uri': 'https://oauth2.googleapis.com/token',
-            'redirect_uris': [redirect_uri]
-        }
+    scope = ' '.join(YOUTUBE_SCOPES)
+    params = {
+        'client_id': client_id,
+        'redirect_uri': redirect_uri,
+        'response_type': 'code',
+        'scope': scope,
+        'access_type': 'offline',
+        'prompt': 'consent',
+        'include_granted_scopes': 'true'
     }
-    
-    flow = Flow.from_client_config(
-        client_config,
-        scopes=YOUTUBE_SCOPES,
-        redirect_uri=redirect_uri
-    )
-    
-    auth_url, _ = flow.authorization_url(
-        access_type='offline',
-        include_granted_scopes='true',
-        prompt='consent'  # Force consent to always get refresh_token
-    )
-    
-    return auth_url
+    return 'https://accounts.google.com/o/oauth2/auth?' + urlencode(params)
 
 
 def exchange_code_for_tokens(
@@ -177,34 +165,25 @@ def exchange_code_for_tokens(
     client_secret: str,
     redirect_uri: str
 ) -> dict:
-    """Exchange authorization code for refresh token."""
-    from google_auth_oauthlib.flow import Flow
+    """Exchange authorization code for refresh token using direct HTTP POST."""
+    import requests as req
     
-    client_config = {
-        'web': {
+    response = req.post(
+        'https://oauth2.googleapis.com/token',
+        data={
+            'code': code,
             'client_id': client_id,
             'client_secret': client_secret,
-            'auth_uri': 'https://accounts.google.com/o/oauth2/auth',
-            'token_uri': 'https://oauth2.googleapis.com/token',
-            'redirect_uris': [redirect_uri]
+            'redirect_uri': redirect_uri,
+            'grant_type': 'authorization_code'
         }
-    }
-    
-    flow = Flow.from_client_config(
-        client_config,
-        scopes=YOUTUBE_SCOPES,
-        redirect_uri=redirect_uri
     )
-    
-    flow.fetch_token(code=code)
-    credentials = flow.credentials
-    
+    tokens = response.json()
+    if 'error' in tokens:
+        raise ValueError(f"Token exchange error: {tokens['error']} - {tokens.get('error_description', '')}")
     return {
-        'access_token': credentials.token,
-        'refresh_token': credentials.refresh_token,
-        'token_uri': credentials.token_uri,
-        'client_id': credentials.client_id,
-        'client_secret': credentials.client_secret,
+        'access_token': tokens.get('access_token', ''),
+        'refresh_token': tokens.get('refresh_token', ''),
     }
 
 
