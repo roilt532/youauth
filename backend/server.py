@@ -527,7 +527,7 @@ async def get_youtube_auth_url():
 
 
 @api_router.get("/youtube/oauth/callback")
-async def youtube_oauth_callback(code: str = Query(None), error: str = Query(None)):
+async def youtube_oauth_callback(code: str = Query(None), error: str = Query(None), state: str = Query(None)):
     """Handle YouTube OAuth callback."""
     if error:
         return RedirectResponse(url=f"/?oauth_error={error}")
@@ -558,6 +558,7 @@ async def youtube_oauth_callback(code: str = Query(None), error: str = Query(Non
             'updated_at': now_iso()
         }})
         
+        logger.info("YouTube OAuth completed successfully - refresh token saved")
         return RedirectResponse(url="/settings?oauth_success=true")
         
     except Exception as e:
@@ -698,8 +699,6 @@ async def health():
 
 # Include router
 app.include_router(api_router)
-# Also include OAuth callback without /api prefix for redirect
-app.include_router(api_router, prefix="")
 
 app.add_middleware(
     CORSMiddleware,
