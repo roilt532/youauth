@@ -132,7 +132,9 @@ def _upload_video_sync(
             ).execute()
             logger.info(f"Thumbnail uploaded for video {video_id}")
         except Exception as e:
-            logger.warning(f"Thumbnail upload failed: {e}")
+            # Custom thumbnails require channel verification (1000+ subs or phone verify)
+            # This is normal for new channels - YouTube will auto-select a frame as thumbnail
+            logger.warning(f"Custom thumbnail not available yet (need channel verification): {e}")
     
     return {
         'video_id': video_id,

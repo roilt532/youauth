@@ -167,7 +167,8 @@ async def run_pipeline(
                 source_video_path=source_video_path,
                 format_type=job.get('format', 'short'),
                 title=script_data.get('title_es', ''),
-                hook_text=script_data.get('hook_es', '')
+                hook_text=script_data.get('hook_es', ''),
+                content_type=job.get('content_type', 'roblox')
             )
             artifacts['video_path'] = video_path
             video_size = os.path.getsize(video_path)
