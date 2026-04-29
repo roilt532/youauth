@@ -1,38 +1,19 @@
-"""Thumbnail Generator - Uses Pillow to create eye-catching YouTube thumbnails"""
+"""Thumbnail Generator - AI images via Pollinations.ai (free, no API key) + Pillow overlay"""
 import asyncio
 import logging
 import os
+import random
+import urllib.parse
 from pathlib import Path
 from typing import Optional
 
 logger = logging.getLogger(__name__)
 
-# Color themes for different content types
 CONTENT_THEMES = {
-    'roblox': {
-        'bg': (10, 15, 40),
-        'accent': (255, 50, 50),
-        'text_color': (255, 255, 255),
-        'highlight': (255, 215, 0)
-    },
-    'curiosity': {
-        'bg': (15, 25, 50),
-        'accent': (0, 180, 255),
-        'text_color': (255, 255, 255),
-        'highlight': (255, 200, 0)
-    },
-    'story': {
-        'bg': (30, 10, 50),
-        'accent': (180, 50, 255),
-        'text_color': (255, 255, 255),
-        'highlight': (255, 180, 50)
-    },
-    'animated': {
-        'bg': (5, 30, 60),
-        'accent': (0, 200, 100),
-        'text_color': (255, 255, 255),
-        'highlight': (255, 255, 50)
-    }
+    'roblox':    {'accent1': (255, 40,  40),  'accent2': (255, 215, 0),   'bg': (15, 10, 45)},
+    'curiosity': {'accent1': (0,  170, 255),  'accent2': (0,  230, 130),  'bg': (10, 20, 60)},
+    'story':     {'accent1': (200, 60, 255),  'accent2': (255, 180, 50),  'bg': (35, 10, 55)},
+    'animated':  {'accent1': (0,  210, 100),  'accent2': (255, 240, 50),  'bg': (10, 40, 20)},
 }
 
 
@@ -41,138 +22,191 @@ async def generate_thumbnail(
     output_dir: str,
     job_id: str,
     content_type: str = 'roblox',
-    subtitle: Optional[str] = None
+    subtitle: Optional[str] = None,
+    ai_prompt: Optional[str] = None,
 ) -> str:
-    """Generate a YouTube thumbnail with bold text and kid-friendly design."""
+    """Generate thumbnail: try AI (Pollinations.ai free) then fall back to Pillow."""
     loop = asyncio.get_event_loop()
+
+    # Try AI-generated background first
+    ai_bg_path = None
+    if ai_prompt:
+        try:
+            ai_bg_path = await _generate_ai_background(ai_prompt, output_dir, job_id)
+        except Exception as e:
+            logger.warning(f'AI thumbnail failed ({e}), using Pillow fallback')
+
     return await loop.run_in_executor(
         None,
-        _generate_thumbnail_sync,
-        title, output_dir, job_id, content_type, subtitle
+        _compose_thumbnail,
+        title, output_dir, job_id, content_type, subtitle, ai_bg_path
     )
 
 
-def _generate_thumbnail_sync(
+async def _generate_ai_background(
+    prompt: str, output_dir: str, job_id: str
+) -> Optional[str]:
+    """Download AI-generated image from Pollinations.ai (completely free, no API key)."""
+    import requests
+
+    # Build optimized prompt for viral kids YouTube thumbnail
+    full_prompt = (
+        f'{prompt}, kids youtube thumbnail style, no text, no watermark, '
+        'bright vivid colors, dramatic lighting, hyper realistic, 4K, '
+        'cinematic composition, high contrast'
+    )
+    encoded = urllib.parse.quote(full_prompt)
+    seed = random.randint(1, 999_999_999)
+
+    url = (
+        f'https://image.pollinations.ai/prompt/{encoded}'
+        f'?width=1280&height=720&nologo=true&model=flux&seed={seed}&enhance=true'
+    )
+
+    logger.info(f'[THUMB] Requesting AI image from Pollinations.ai...')
+    resp = requests.get(url, timeout=90)
+    resp.raise_for_status()
+
+    ai_path = Path(output_dir) / f'{job_id}_ai_bg.jpg'
+    ai_path.write_bytes(resp.content)
+
+    if ai_path.stat().st_size < 10_000:
+        raise ValueError('AI image too small, likely failed')
+
+    logger.info(f'[THUMB] AI background saved: {ai_path.name} ({ai_path.stat().st_size:,} bytes)')
+    return str(ai_path)
+
+
+def _compose_thumbnail(
     title: str,
     output_dir: str,
     job_id: str,
-    content_type: str = 'roblox',
-    subtitle: Optional[str] = None
+    content_type: str,
+    subtitle: Optional[str],
+    ai_bg_path: Optional[str]
 ) -> str:
-    """Synchronous thumbnail generation."""
-    from PIL import Image, ImageDraw, ImageFont
-    
+    """Compose final thumbnail: AI background (if available) + text overlay."""
+    from PIL import Image, ImageDraw, ImageFont, ImageEnhance, ImageFilter
+
+    W, H = 1280, 720
     theme = CONTENT_THEMES.get(content_type, CONTENT_THEMES['roblox'])
     output_path = Path(output_dir)
     output_path.mkdir(parents=True, exist_ok=True)
-    
-    # YouTube standard thumbnail size
-    width, height = 1280, 720
-    
-    # Create base image
-    img = Image.new('RGB', (width, height), color=theme['bg'])
+
+    # ---- Background ----
+    if ai_bg_path and os.path.exists(ai_bg_path):
+        try:
+            bg = Image.open(ai_bg_path).convert('RGB').resize((W, H))
+            # Slightly darken for text readability
+            bg = ImageEnhance.Brightness(bg).enhance(0.75)
+        except Exception:
+            bg = _make_gradient_bg(W, H, theme)
+    else:
+        bg = _make_gradient_bg(W, H, theme)
+
+    img = bg.copy()
     draw = ImageDraw.Draw(img)
-    
-    # Gradient background effect
-    for y in range(height):
-        progress = y / height
-        r = int(theme['bg'][0] + progress * 30)
-        g = int(theme['bg'][1] + progress * 20)
-        b = int(theme['bg'][2] + progress * 40)
-        draw.line([(0, y), (width, y)], fill=(min(r, 255), min(g, 255), min(b, 255)))
-    
-    # Top accent bar (brand)
-    draw.rectangle([0, 0, width, 10], fill=theme['accent'])
-    draw.rectangle([0, height - 10, width, height], fill=theme['accent'])
-    
-    # Corner decorations
-    accent_r, accent_g, accent_b = theme['accent']
-    for i in range(80):
-        alpha = int(120 * (1 - i / 80))
-        draw.rectangle([0, 0, 80 - i, 80 - i], fill=(accent_r, accent_g, accent_b))
-    
-    # Fonts
-    try:
-        font_paths = [
-            "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
-            "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-        ]
-        font_large = None
-        font_medium = None
-        font_small = None
-        
-        for fp in font_paths:
+
+    a1 = theme['accent1']
+    a2 = theme['accent2']
+
+    # ---- Overlay elements ----
+    # Top and bottom accent bars
+    draw.rectangle([0, 0, W, 12], fill=a1)
+    draw.rectangle([0, H-12, W, H], fill=a1)
+
+    # Left edge highlight
+    draw.rectangle([0, 0, 10, H], fill=a2)
+
+    # Semi-transparent title area
+    title_overlay = Image.new('RGBA', (W, H), (0, 0, 0, 0))
+    td = ImageDraw.Draw(title_overlay)
+    td.rectangle([0, H//3, W, H*3//4 + 20], fill=(0, 0, 0, 140))
+    img = Image.alpha_composite(img.convert('RGBA'), title_overlay).convert('RGB')
+    draw = ImageDraw.Draw(img)
+
+    # ---- Fonts ----
+    def _font(size: int):
+        for fp in [
+            '/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf',
+            '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf',
+        ]:
             if os.path.exists(fp):
-                font_large = ImageFont.truetype(fp, 90)
-                font_medium = ImageFont.truetype(fp, 55)
-                font_small = ImageFont.truetype(fp, 38)
-                break
-        
-        if not font_large:
-            font_large = ImageFont.load_default()
-            font_medium = ImageFont.load_default()
-            font_small = ImageFont.load_default()
-    except Exception:
-        font_large = ImageFont.load_default()
-        font_medium = ImageFont.load_default()
-        font_small = ImageFont.load_default()
-    
-    def draw_text_with_outline(draw_obj, pos, text, font, text_color, outline_color, outline_w=4):
-        x, y = pos
-        for dx in range(-outline_w, outline_w + 1):
-            for dy in range(-outline_w, outline_w + 1):
-                if dx != 0 or dy != 0:
-                    draw_obj.text((x + dx, y + dy), text, font=font, fill=outline_color)
-        draw_obj.text(pos, text, font=font, fill=text_color)
-    
-    # Title text (split into 2 lines max)
-    clean_title = title.replace('\n', ' ')
-    words = clean_title.split()
-    lines = []
-    current_line = ''
-    
-    for word in words:
-        test_line = (current_line + ' ' + word).strip()
-        bbox = draw.textbbox((0, 0), test_line, font=font_large)
-        if bbox[2] - bbox[0] < width - 100:
-            current_line = test_line
+                try:
+                    return ImageFont.truetype(fp, size)
+                except Exception:
+                    pass
+        return ImageFont.load_default()
+
+    def _outline_text(d, xy, text, font, fill=(255,255,255), outline=(0,0,0), ow=5):
+        x, y = xy
+        for dx in range(-ow, ow+1):
+            for dy in range(-ow, ow+1):
+                if dx or dy:
+                    d.text((x+dx, y+dy), text, font=font, fill=outline)
+        d.text(xy, text, font=font, fill=fill)
+
+    # ---- Title text ----
+    clean = title.replace('\n', ' ')
+    font_lg = _font(82)
+    words = clean.split()
+    lines, cur = [], ''
+    for w in words:
+        test = (cur + ' ' + w).strip()
+        bbox = draw.textbbox((0, 0), test, font=font_lg)
+        if bbox[2] - bbox[0] < W - 80:
+            cur = test
         else:
-            if current_line:
-                lines.append(current_line)
-            current_line = word
-        if len(lines) >= 2:
-            break
-    if current_line and len(lines) < 2:
-        lines.append(current_line)
-    
-    # Draw title
-    y_offset = 180
+            if cur: lines.append(cur)
+            cur = w
+        if len(lines) >= 2: break
+    if cur and len(lines) < 2: lines.append(cur)
+
+    y_off = H // 3 + 10
     for line in lines[:2]:
-        bbox = draw.textbbox((0, 0), line, font=font_large)
-        text_w = bbox[2] - bbox[0]
-        x = (width - text_w) // 2
-        draw_text_with_outline(draw, (x, y_offset), line, font_large, theme['text_color'], (0, 0, 0), 5)
-        y_offset += 100
-    
-    # Content type badge
+        bbox = draw.textbbox((0, 0), line, font=font_lg)
+        x = (W - (bbox[2]-bbox[0])) // 2
+        _outline_text(draw, (x, y_off), line, font_lg, (255,255,255), (0,0,0), 5)
+        y_off += 95
+
+    # ---- Content type badge (bottom-left) ----
     badge_map = {
-        'roblox': '🎮 ROBLOX',
+        'roblox':    '🎮 ROBLOX',
         'curiosity': '🔬 CURIOSIDADES',
-        'story': '📖 HISTORIA',
-        'animated': '🎨 ANIMADO'
+        'story':     '📖 HISTORIA',
+        'animated':  '🎨 ANIMADO',
     }
-    badge_text = badge_map.get(content_type, '▶ VIDEO')
-    draw_text_with_outline(draw, (50, 570), badge_text, font_medium, theme['highlight'], (0, 0, 0), 3)
-    
-    # KIDS SAFE green badge
-    badge_x = width - 220
-    badge_y = height - 75
-    draw.rounded_rectangle([badge_x, badge_y, badge_x + 200, badge_y + 55], radius=8, fill=(0, 160, 80))
-    draw.text((badge_x + 15, badge_y + 12), '✅ KIDS SAFE', font=font_small, fill=(255, 255, 255))
-    
-    # Save thumbnail
-    thumb_path = output_path / f"{job_id}_thumbnail.jpg"
-    img.save(str(thumb_path), 'JPEG', quality=95)
-    
-    logger.info(f"Thumbnail generated: {thumb_path} ({thumb_path.stat().st_size:,} bytes)")
+    badge = badge_map.get(content_type, '▶ VIDEO')
+    font_md = _font(48)
+    bbox = draw.textbbox((0, 0), badge, font=font_md)
+    bw = bbox[2]-bbox[0] + 36
+    draw.rounded_rectangle([30, H-80, 30+bw, H-16], radius=10, fill=a1)
+    draw.text((48, H-76), badge, font=font_md, fill=(255,255,255))
+
+    # ---- KIDS SAFE badge (bottom-right) ----
+    ks = '✅ KIDS SAFE'
+    font_sm = _font(36)
+    bbox2 = draw.textbbox((0, 0), ks, font=font_sm)
+    ksx = W - (bbox2[2]-bbox2[0]) - 42
+    draw.rounded_rectangle([ksx-10, H-76, ksx+(bbox2[2]-bbox2[0])+22, H-18], radius=8, fill=(0,160,80))
+    draw.text((ksx+6, H-70), ks, font=font_sm, fill=(255,255,255))
+
+    # ---- Save ----
+    thumb_path = output_path / f'{job_id}_thumbnail.jpg'
+    img.save(str(thumb_path), 'JPEG', quality=96)
+    logger.info(f'[THUMB] Final: {thumb_path.name} ({thumb_path.stat().st_size:,} bytes)')
     return str(thumb_path)
+
+
+def _make_gradient_bg(W: int, H: int, theme: dict):
+    from PIL import Image, ImageDraw
+    bg_color = theme.get('bg', (15, 10, 45))
+    img = Image.new('RGB', (W, H))
+    draw = ImageDraw.Draw(img)
+    for y in range(H):
+        p = y / H
+        r = min(255, int(bg_color[0] + p * 50))
+        g = min(255, int(bg_color[1] + p * 30))
+        b = min(255, int(bg_color[2] + p * 60))
+        draw.line([(0, y), (W, y)], fill=(r, g, b))
+    return img

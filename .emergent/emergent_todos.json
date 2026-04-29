@@ -1,6 +1,14 @@
 [
   {
-    "content": "Phase 2: End-to-end testing with Testing Agent",
+    "content": "Testing completo del pipeline con video viral legal",
     "status": "completed"
+  },
+  {
+    "content": "Actualizar GitHub workflow para nuevas dependencias",
+    "status": "completed"
+  },
+  {
+    "content": "Push código final a repositorio roilt532/youauth",
+    "status": "in_progress"
   }
 ]

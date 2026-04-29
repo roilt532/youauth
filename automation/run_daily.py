@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 """
-Daily YouTube Automation Script
+Daily YouTube Automation Script - VIRAL CONTENT CURATION
 Run by GitHub Actions or manually for standalone automation.
 
 Environment Variables Required:
-  EMERGENT_LLM_KEY - Emergent LLM key (for Gemini/OpenAI)
+  GEMINI_API_KEY   - Google Gemini API key (free tier)
   YT_CLIENT_ID     - YouTube OAuth Client ID
   YT_CLIENT_SECRET - YouTube OAuth Client Secret
   YT_REFRESH_TOKEN - YouTube OAuth Refresh Token
   VIDEO_TOPIC      - (Optional) Specific topic to use
   CONTENT_TYPE     - (Optional) roblox/curiosity/story/animated (default: roblox)
-  LANGUAGE         - (Optional) es/en/bilingual (default: bilingual)
+  LANGUAGE         - (Optional) es/en (default: es)
   FORMAT           - (Optional) short/long (default: short)
 """
 
@@ -68,50 +68,55 @@ AUTO_TOPICS = {
 
 
 async def run_daily_automation():
-    """Main automation function."""
-    logger.info("=" * 60)
-    logger.info("YOUTUBE AUTOMATION PIPELINE - DAILY RUN")
-    logger.info(f"Time: {datetime.now(timezone.utc).isoformat()}")
-    logger.info("=" * 60)
+    """Main automation function with viral content curation."""
+    logger.info("=" * 70)
+    logger.info("🚀 YOUTUBE SHORTS AUTOMATION - VIRAL CONTENT CURATION")
+    logger.info(f"⏰ Time: {datetime.now(timezone.utc).isoformat()}")
+    logger.info("=" * 70)
     
     # Get environment variables
-    emergent_key = os.environ.get('EMERGENT_LLM_KEY', '')
+    gemini_key = os.environ.get('GEMINI_API_KEY', '')
     yt_client_id = os.environ.get('YT_CLIENT_ID', '')
     yt_client_secret = os.environ.get('YT_CLIENT_SECRET', '')
     yt_refresh_token = os.environ.get('YT_REFRESH_TOKEN', '')
     
-    if not emergent_key:
-        logger.error("EMERGENT_LLM_KEY not set!")
+    if not gemini_key:
+        logger.error("❌ GEMINI_API_KEY not set!")
         sys.exit(1)
     
     if not yt_refresh_token:
-        logger.warning("YT_REFRESH_TOKEN not set - will skip upload")
+        logger.warning("⚠️ YT_REFRESH_TOKEN not set - will skip upload")
     
     # Build job from env or defaults
-    content_type = os.environ.get('CONTENT_TYPE', 'roblox')
-    language = os.environ.get('LANGUAGE', 'bilingual')
+    content_type = os.environ.get('CONTENT_TYPE', 'curiosity')  # Default: curiosity (más versátil)
+    language = os.environ.get('LANGUAGE', 'es')  # Default: español
     format_type = os.environ.get('FORMAT', 'short')
     
     topic = os.environ.get('VIDEO_TOPIC', '')
     if not topic:
-        topics_for_type = AUTO_TOPICS.get(content_type, AUTO_TOPICS['roblox'])
+        topics_for_type = AUTO_TOPICS.get(content_type, AUTO_TOPICS['curiosity'])
         topic = random.choice(topics_for_type)
-        logger.info(f"Auto-selected topic: {topic}")
+        logger.info(f"🎲 Auto-selected topic: {topic}")
     
-    # Anti-detection: random delay (1-10 minutes)
-    delay_seconds = random.randint(60, 600)
-    logger.info(f"Anti-detection delay: {delay_seconds}s")
+    # Anti-detection: random delay (1-5 minutes for faster testing, can increase for production)
+    delay_seconds = random.randint(60, 300)
+    logger.info(f"⏳ Anti-detection delay: {delay_seconds}s")
     await asyncio.sleep(delay_seconds)
     
     job = {
         'id': f'auto_{datetime.now().strftime("%Y%m%d_%H%M%S")}',
-        'title': f'Auto: {topic[:50]}',
+        'title': f'Auto Viral: {topic[:50]}',
         'topic': topic,
-        'source_url': '',
+        'source_url': '',  # Will be discovered automatically
         'content_type': content_type,
         'language': language,
         'format': format_type,
         'made_for_kids': True,
+        'use_viral_curation': True,  # 🆕 Activar curación viral
+        'optimize_shorts': True,     # 🆕 Optimizar para Shorts
+        'add_subtitles': True,       # 🆕 Agregar subtítulos
+        'min_views': 100_000,        # Mínimo 100k views
+        'min_age_days': 365,         # Al menos 1 año de antigüedad
     }
     
     settings = {
@@ -119,14 +124,14 @@ async def run_daily_automation():
         'youtube_client_secret': yt_client_secret,
         'youtube_refresh_token': yt_refresh_token,
         'upload_privacy': 'public',
-        'emergent_llm_key': emergent_key,
     }
     
-    # Override the LLM key in environment
-    os.environ['EMERGENT_LLM_KEY'] = emergent_key
+    # Set API key in environment
+    os.environ['GEMINI_API_KEY'] = gemini_key
     
-    logger.info(f"Job: {job['title']}")
-    logger.info(f"Content type: {content_type}, Language: {language}, Format: {format_type}")
+    logger.info(f"📝 Job: {job['title']}")
+    logger.info(f"🎯 Content type: {content_type} | Language: {language} | Format: {format_type}")
+    logger.info(f"🔍 Viral curation: Enabled (min {job['min_views']:,} views)")
     
     from pipeline.pipeline_runner import run_pipeline
     
@@ -141,22 +146,29 @@ async def run_daily_automation():
         log_callback=log_callback
     )
     
-    logger.info("=" * 60)
-    logger.info(f"PIPELINE RESULT: {result.get('status', 'unknown').upper()}")
+    logger.info("=" * 70)
+    logger.info(f"📊 PIPELINE RESULT: {result.get('status', 'unknown').upper()}")
     
     if result.get('status') == 'completed':
         artifacts = result.get('artifacts', {})
+        
+        # Log viral content used
+        if artifacts.get('viral_content'):
+            vc = artifacts['viral_content']
+            logger.info(f"✨ Viral source: {vc.get('title', '')[:60]}...")
+            logger.info(f"   Platform: {vc.get('platform')} | Views: {vc.get('views', 0):,}")
+        
         if artifacts.get('youtube_url'):
-            logger.info(f"Video uploaded: {artifacts['youtube_url']}")
+            logger.info(f"🎬 Video uploaded: {artifacts['youtube_url']}")
         if artifacts.get('script', {}).get('title_es'):
-            logger.info(f"Title: {artifacts['script']['title_es']}")
-        logger.info("AUTOMATION COMPLETE!")
+            logger.info(f"📌 Title: {artifacts['script']['title_es']}")
+        logger.info("🎉 AUTOMATION COMPLETE!")
     else:
         error = result.get('error', 'Unknown error')
-        logger.error(f"PIPELINE FAILED: {error}")
+        logger.error(f"❌ PIPELINE FAILED: {error}")
         sys.exit(1)
     
-    logger.info("=" * 60)
+    logger.info("=" * 70)
     
     # Save results to file
     results_path = Path(os.environ.get('PIPELINE_OUTPUT_DIR', '/tmp/yt_automation')) / 'last_run.json'
@@ -167,9 +179,10 @@ async def run_daily_automation():
             'status': result.get('status'),
             'job_title': job['title'],
             'youtube_url': result.get('artifacts', {}).get('youtube_url'),
+            'viral_source': result.get('artifacts', {}).get('viral_content', {}).get('title', 'None'),
         }, f, indent=2)
     
-    logger.info(f"Results saved to: {results_path}")
+    logger.info(f"💾 Results saved to: {results_path}")
 
 
 if __name__ == '__main__':

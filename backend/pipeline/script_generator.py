@@ -1,4 +1,4 @@
-"""Script Generator - Uses Emergent LLM (Gemini) to generate bilingual kids content scripts"""
+"""Script Generator - Uses Google Gemini free API (zero Emergent dependency)"""
 import asyncio
 import json
 import logging
@@ -7,41 +7,52 @@ from typing import Optional
 
 logger = logging.getLogger(__name__)
 
-EMERGENT_LLM_KEY = os.environ.get('EMERGENT_LLM_KEY', 'sk-emergent-bC626Fa91F75964424')
+# Gemini free API key (from Google AI Studio - completely free)
+GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '')
+
+# Fallback: Emergent key if Gemini not configured (for dashboard usage only)
+EMERGENT_LLM_KEY = os.environ.get('EMERGENT_LLM_KEY', '')
 
 CONTENT_PROMPTS = {
-    'roblox': """Eres un experto creador de contenido para niños en YouTube especializado en Roblox.
-Generas guiones VIRALES, emocionantes y seguros para niños de 6-12 años (COPPA compliant).
-Usa MUCHO entusiasmo, humor infantil, y crea suspenso.""",
-    'curiosity': """Eres un experto creador de contenido educativo para niños en YouTube.
-Generas curiosidades y datos increíbles que sorprenden a los niños de 6-12 años.
-Usa un tono divertido, sorprendente y educativo.""",
-    'story': """Eres un maestro cuentacuentos para niños en YouTube.
-Generas historias emocionantes, con personajes divertidos y moralejas positivas para niños de 6-12 años.
-Usa suspenso, humor y emociones fuertes.""",
-    'animated': """Eres un creador de videos animados para niños en YouTube.
-Generas guiones para videos animados con personajes adorables y aventuras emocionantes para niños de 4-10 años.
-Usa un tono mágico, colorido y muy divertido.""",
+    'roblox': (
+        'Eres un experto creador de contenido VIRAL para niños en YouTube especializado en Roblox. '
+        'Generas guiónes EXPLOSIVOS, emocionantes y seguros para niños de 6-12 años (COPPA compliant). '
+        'Tu estilo: entusiasmo extremo, suspenso, humor infantil, frases cortas y directas.'
+    ),
+    'curiosity': (
+        'Eres un experto creador de contenido educativo VIRAL para niños en YouTube. '
+        'Generas curiosidades que dejan boquiabiertos a los niños de 6-12 años. '
+        'Tu estilo: datos increíbles, reacciones exageradas, suspenso al revelar.'
+    ),
+    'story': (
+        'Eres un maestro cuentacuentos VIRAL para niños en YouTube. '
+        'Generas historias emocionantes con final sorpresa para niños de 6-12 años. '
+        'Tu estilo: inicio explosivo, personajes coloridos, giros inesperados.'
+    ),
+    'animated': (
+        'Eres un creador de videos animados VIRALES para niños en YouTube. '
+        'Generas guiónes mágicos y aventureros para niños de 4-10 años. '
+        'Tu estilo: mágico, colorido, personajes adorables, música de fondo.'
+    ),
 }
 
-SCRIPT_PROMPT_TEMPLATE = """Genera un guión para un video de YouTube para niños sobre: {topic}
+SCRIPT_PROMPT = """Genera un guión para un video de YouTube para niños sobre: {topic}
 
-Tipo de contenido: {content_type}
-Formato: {format_type} ({duration_hint})
-Idioma principal: {language}
+Tipo: {content_type} | Formato: {format_type} ({duration_hint}) | Idioma: {language}
 
-Responde EXACTAMENTE en este formato JSON válido (sin texto adicional, sin ```json):
+Respuesta en JSON válido EXACTO (sin ```json, solo el JSON puro):
 {{
-    "title_es": "título en español MAX 60 chars, muy llamativo con emojis",
-    "title_en": "title in english MAX 60 chars, very catchy with emojis",
-    "hook_es": "frase de enganche primeros 3 segundos, muy impactante (1-2 oraciones)",
-    "hook_en": "hook first 3 seconds, very impactful (1-2 sentences)",
-    "script_es": "guión completo en español apropiado para {duration_hint}, con pausas naturales, muy emocionante",
-    "script_en": "full script in english for {duration_hint}, natural pauses, very exciting",
-    "tags": ["tag1", "tag2", "tag3", "tag4", "tag5", "tag6", "tag7", "tag8"],
-    "category": "Gaming o Education o Entertainment",
-    "description_es": "descripción SEO del video en español MAX 300 chars con hashtags",
-    "description_en": "SEO video description in english MAX 300 chars with hashtags"
+    "title_es": "título VIRAL en español max 60 chars con emojis 🎮💥",
+    "title_en": "VIRAL title in english max 60 chars with emojis 🎮💥",
+    "hook_es": "frase de enganche primeros 3 seg en español muy impactante (1-2 oraciones)",
+    "hook_en": "hook first 3 seconds english very impactful (1-2 sentences)",
+    "script_es": "guión completo español {duration_hint} con pausas naturales, muy emocionante",
+    "script_en": "full script english {duration_hint} natural pauses very exciting",
+    "thumbnail_prompt": "detailed image prompt in english for AI thumbnail: bright colorful kids youtube thumbnail about {topic}, {content_type} theme, no text, vibrant dramatic lighting, 4K",
+    "tags": ["tag1","tag2","tag3","tag4","tag5","tag6","tag7","tag8"],
+    "category": "Gaming",
+    "description_es": "descripción SEO max 300 chars con hashtags",
+    "description_en": "SEO description max 300 chars with hashtags"
 }}"""
 
 
@@ -52,65 +63,95 @@ async def generate_script(
     format_type: str = 'short',
     custom_prompt: Optional[str] = None
 ) -> dict:
-    """Generate a bilingual kids content script using Gemini LLM."""
+    """Generate a bilingual kids content script. Uses Gemini free API first."""
+
+    duration_hint = '60 segundos/seconds' if format_type == 'short' else '5-8 minutos/minutes'
+    system_msg = custom_prompt or CONTENT_PROMPTS.get(content_type, CONTENT_PROMPTS['roblox'])
+    user_prompt = SCRIPT_PROMPT.format(
+        topic=topic, content_type=content_type,
+        format_type=format_type, duration_hint=duration_hint, language=language
+    )
+
+    raw_response = None
+
+    if GEMINI_API_KEY:
+        raw_response = await _gemini_generate(system_msg, user_prompt)
+    elif EMERGENT_LLM_KEY:
+        raw_response = await _emergent_generate(system_msg, user_prompt)
+    else:
+        logger.warning('No LLM key configured - using fallback script')
+        return _fallback_script(topic, content_type)
+
+    return _parse_script(raw_response, topic, content_type)
+
+
+async def _gemini_generate(system_msg: str, user_prompt: str) -> str:
+    """Generate using Google Gemini free API."""
+    import google.generativeai as genai
+
+    genai.configure(api_key=GEMINI_API_KEY)
+    model = genai.GenerativeModel(
+        model_name='gemini-1.5-flash',
+        system_instruction=system_msg
+    )
+
+    loop = asyncio.get_event_loop()
+    response = await loop.run_in_executor(
+        None,
+        lambda: model.generate_content(user_prompt)
+    )
+    return response.text
+
+
+async def _emergent_generate(system_msg: str, user_prompt: str) -> str:
+    """Fallback: generate using Emergent LLM key (requires Emergent subscription)."""
+    from emergentintegrations.llm.chat import LlmChat, UserMessage
+    chat = LlmChat(
+        api_key=EMERGENT_LLM_KEY,
+        session_id=f'script_{id(user_prompt)}',
+        system_message=system_msg
+    )
+    return await chat.send_message(UserMessage(text=user_prompt))
+
+
+def _parse_script(raw: str, topic: str, content_type: str) -> dict:
+    """Parse JSON from LLM response."""
     try:
-        from emergentintegrations.llm.chat import LlmChat, UserMessage
-        
-        duration_hint = "60 segundos/seconds" if format_type == 'short' else "5-8 minutos/minutes"
-        system_msg = custom_prompt or CONTENT_PROMPTS.get(content_type, CONTENT_PROMPTS['roblox'])
-        
-        chat = LlmChat(
-            api_key=EMERGENT_LLM_KEY,
-            session_id=f"script_{content_type}_{language}_{id(topic)}",
-            system_message=system_msg
-        )
-        
-        prompt = SCRIPT_PROMPT_TEMPLATE.format(
-            topic=topic,
-            content_type=content_type,
-            format_type=format_type,
-            duration_hint=duration_hint,
-            language=language
-        )
-        
-        response = await chat.send_message(UserMessage(text=prompt))
-        
-        # Clean and parse JSON
-        content = response.strip()
-        if content.startswith('```json'):
-            content = content[7:]
-        if content.startswith('```'):
-            content = content[3:]
+        content = raw.strip()
+        for marker in ('```json', '```'):
+            if content.startswith(marker):
+                content = content[len(marker):]
         if content.endswith('```'):
             content = content[:-3]
-        content = content.strip()
-        
-        script_data = json.loads(content)
-        
-        # Validate required fields
-        required_fields = ['title_es', 'title_en', 'script_es', 'script_en', 'tags']
-        for field in required_fields:
-            if field not in script_data:
-                raise ValueError(f"Missing required field: {field}")
-        
-        logger.info(f"Script generated for topic: {topic[:50]}")
-        return script_data
-        
-    except json.JSONDecodeError as e:
-        logger.error(f"Failed to parse script JSON: {e}")
-        # Return fallback script
-        return {
-            "title_es": f"🎮 {topic[:50]} - Video Increíble!",
-            "title_en": f"🎮 {topic[:50]} - Amazing Video!",
-            "hook_es": "¡No vas a creer lo que va a pasar en este video!",
-            "hook_en": "You won't believe what's going to happen in this video!",
-            "script_es": f"¡Hola amigos! Hoy les traigo un video increíble sobre {topic}. ¡Van a flipar con todo lo que vamos a ver hoy! ¡No se pierdan ni un segundo!",
-            "script_en": f"Hey friends! Today I have an amazing video about {topic}. You're going to love everything we're going to see today! Don't miss a second!",
-            "tags": ["kids", "children", "viral", "roblox", "fun", "gaming", "niños", "español"],
-            "category": "Gaming",
-            "description_es": f"Video increíble sobre {topic} para niños. ¡Dale like y suscríbete! #kids #viral #roblox",
-            "description_en": f"Amazing video about {topic} for kids. Like and subscribe! #kids #viral #roblox"
-        }
+        data = json.loads(content.strip())
+        required = ['title_es', 'title_en', 'script_es', 'script_en', 'tags']
+        for f in required:
+            if f not in data:
+                raise ValueError(f'Missing field: {f}')
+        # Ensure thumbnail_prompt exists
+        if 'thumbnail_prompt' not in data:
+            data['thumbnail_prompt'] = (
+                f'kids youtube thumbnail about {topic}, {content_type} gaming theme, '
+                'bright colorful vibrant, dramatic lighting, no text, 4K'
+            )
+        logger.info(f"Script generated: {data.get('title_es', '')[:50]}")
+        return data
     except Exception as e:
-        logger.error(f"Script generation error: {e}")
-        raise
+        logger.warning(f'Script parse error ({e}), using fallback')
+        return _fallback_script(topic, content_type)
+
+
+def _fallback_script(topic: str, content_type: str = 'roblox') -> dict:
+    return {
+        'title_es': f'🎮 {topic[:45]}! 💥',
+        'title_en': f'🎮 {topic[:45]}! 💥',
+        'hook_es': '¡No vas a creer lo que descubrí hoy! ¡Esto lo cambia todo!',
+        'hook_en': "You won't believe what I found today! This changes everything!",
+        'script_es': f'¡Hola amigos! Hoy les traigo algo INCREÍBLE sobre {topic}. ¡Van a flipar! Este secreto que nadie conoce va a cambiarlo todo en el juego. ¡No se pierdan ni un segundo de este video!',
+        'script_en': f'Hey friends! Today I have something AMAZING about {topic}. You are going to love this! This secret that nobody knows is going to change everything in the game!',
+        'thumbnail_prompt': f'kids youtube thumbnail {topic} {content_type} gaming theme bright colorful vibrant no text 4K',
+        'tags': ['kids', 'children', 'viral', 'roblox', 'fun', 'gaming', 'ni\u00f1os', 'espa\u00f1ol'],
+        'category': 'Gaming',
+        'description_es': f'Video increíble sobre {topic}. ¡Dale like y suscríbete! #kids #viral #roblox #niños',
+        'description_en': f'Amazing video about {topic}. Like and subscribe! #kids #viral #roblox',
+    }

@@ -61,24 +61,27 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install \
-            emergentintegrations \
-            gtts \
+            edge-tts \
+            google-generativeai \
             moviepy \
             pillow \
             yt-dlp \
+            beautifulsoup4 \
+            requests \
+            lxml \
             google-api-python-client \
             google-auth-oauthlib \
             google-auth-httplib2
 
       - name: Run automation pipeline
         env:
-          EMERGENT_LLM_KEY: ${{ secrets.EMERGENT_LLM_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
           YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
           YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
           VIDEO_TOPIC: ${{ github.event.inputs.topic || '' }}
           CONTENT_TYPE: ${{ github.event.inputs.content_type || 'roblox' }}
-          LANGUAGE: ${{ github.event.inputs.language || 'bilingual' }}
+          LANGUAGE: ${{ github.event.inputs.language || 'es' }}
           FORMAT: ${{ github.event.inputs.format || 'short' }}
           PIPELINE_OUTPUT_DIR: /tmp/yt_automation
         run: |
