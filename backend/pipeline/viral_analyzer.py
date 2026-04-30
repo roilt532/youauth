@@ -53,13 +53,17 @@ Responde en JSON EXACTO (sin ```json):
 }}"""
     
     try:
-        # Use new google-genai SDK with fallbacks
+        # Use new google-genai SDK with universal model names
         from google import genai
         
         client = genai.Client(api_key=GEMINI_API_KEY)
         
-        # Try multiple models
-        models_to_try = ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-2.5-flash']
+        # Try generic model names that are always available
+        models_to_try = [
+            'gemini-flash-latest',
+            'gemini-pro-latest',
+            'gemini-2.5-flash',
+        ]
         
         loop = asyncio.get_event_loop()
         
@@ -74,13 +78,14 @@ Responde en JSON EXACTO (sin ```json):
                 
                 raw = await loop.run_in_executor(None, _analyze)
                 logger.info(f'✅ Viral analysis with {model_name}')
-                break  # Success, exit loop
+                break  # Success
                 
             except Exception as e:
                 error_str = str(e)
-                if '503' in error_str or 'UNAVAILABLE' in error_str:
-                    logger.warning(f'⚠️ {model_name} overloaded, trying next...')
-                    if model_name == models_to_try[-1]:  # Last model
+                if ('503' in error_str or 'UNAVAILABLE' in error_str or 
+                    '404' in error_str or 'Not Found' in error_str):
+                    logger.warning(f'⚠️ {model_name} unavailable, trying next...')
+                    if model_name == models_to_try[-1]:
                         raise
                     continue
                 else:
@@ -174,15 +179,19 @@ Responde en JSON EXACTO (sin ```json):
 }}"""
     
     try:
-        # Use new google-genai SDK with fallbacks
+        # Use new google-genai SDK with universal model names
         from google import genai
         
         client = genai.Client(api_key=GEMINI_API_KEY)
         
         system_instruction = 'Eres un creador experto de scripts virales para YouTube Shorts infantiles.'
         
-        # Try multiple models
-        models_to_try = ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-2.5-flash']
+        # Try generic model names
+        models_to_try = [
+            'gemini-flash-latest',
+            'gemini-pro-latest',
+            'gemini-2.5-flash',
+        ]
         
         loop = asyncio.get_event_loop()
         
@@ -197,13 +206,14 @@ Responde en JSON EXACTO (sin ```json):
                 
                 raw = await loop.run_in_executor(None, _generate)
                 logger.info(f'✅ Script generation with {model_name}')
-                break  # Success, exit loop
+                break  # Success
                 
             except Exception as e:
                 error_str = str(e)
-                if '503' in error_str or 'UNAVAILABLE' in error_str:
-                    logger.warning(f'⚠️ {model_name} overloaded, trying next...')
-                    if model_name == models_to_try[-1]:  # Last model
+                if ('503' in error_str or 'UNAVAILABLE' in error_str or 
+                    '404' in error_str or 'Not Found' in error_str):
+                    logger.warning(f'⚠️ {model_name} unavailable, trying next...')
+                    if model_name == models_to_try[-1]:
                         raise
                     continue
                 else:

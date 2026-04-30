@@ -86,91 +86,66 @@ async def generate_script(
 
 
 async def _gemini_generate(system_msg: str, user_prompt: str) -> str:
-    """Generate using Google Gemini API with retry and multiple model fallbacks."""
+    """Generate using Google Gemini API with universal model names."""
     import time
     
-    # Models to try in order (menos a más ocupados)
+    # Use generic model names that are always available
     models_priority = [
-        ('google-genai', 'gemini-1.5-flash'),    # Más estable
-        ('google-genai', 'gemini-1.5-pro'),      # Potente y estable
-        ('google-genai', 'gemini-2.5-flash'),    # Más nuevo pero más ocupado
-        ('legacy', 'gemini-1.5-pro-latest'),
-        ('legacy', 'gemini-1.5-flash-latest'),
+        'gemini-flash-latest',      # Generic flash (always available)
+        'gemini-pro-latest',        # Generic pro (always available) 
+        'gemini-2.5-flash',         # Specific if available
+        'gemini-1.5-flash',         # Legacy name
     ]
     
     max_retries = 2
     last_error = None
     
-    for sdk_type, model_name in models_priority:
+    for model_name in models_priority:
         for attempt in range(max_retries):
             try:
-                if sdk_type == 'google-genai':
-                    # Try new SDK
-                    from google import genai
-                    
-                    client = genai.Client(api_key=GEMINI_API_KEY)
-                    
-                    loop = asyncio.get_event_loop()
-                    
-                    def _generate():
-                        response = client.models.generate_content(
-                            model=model_name,
-                            contents=f"{system_msg}\n\n{user_prompt}"
-                        )
-                        return response.text
-                    
-                    result = await loop.run_in_executor(None, _generate)
-                    logger.info(f'✅ Success with {model_name} (attempt {attempt + 1})')
-                    return result
-                    
-                else:
-                    # Try legacy SDK
-                    import google.generativeai as genai_legacy
-                    
-                    genai_legacy.configure(api_key=GEMINI_API_KEY)
-                    model = genai_legacy.GenerativeModel(
-                        model_name=model_name,
-                        generation_config={'temperature': 0.9}
-                    )
-                    
-                    loop = asyncio.get_event_loop()
-                    response = await loop.run_in_executor(
-                        None,
-                        lambda: model.generate_content(f"{system_msg}\n\n{user_prompt}")
-                    )
-                    logger.info(f'✅ Success with {model_name} (legacy SDK)')
-                    return response.text
-                    
-            except ImportError as ie:
-                logger.warning(f'SDK import failed: {ie}')
-                break  # Skip this SDK type
+                from google import genai
                 
+                client = genai.Client(api_key=GEMINI_API_KEY)
+                
+                loop = asyncio.get_event_loop()
+                
+                def _generate():
+                    response = client.models.generate_content(
+                        model=model_name,
+                        contents=f"{system_msg}\n\n{user_prompt}"
+                    )
+                    return response.text
+                
+                result = await loop.run_in_executor(None, _generate)
+                logger.info(f'✅ Success with {model_name}')
+                return result
+                    
             except Exception as e:
                 error_str = str(e)
                 last_error = e
                 
                 # Check if it's a 503 (overloaded)
-                if '503' in error_str or 'UNAVAILABLE' in error_str or 'high demand' in error_str:
-                    logger.warning(f'⚠️ {model_name} overloaded (503), trying next model...')
-                    break  # Don't retry same model, try next one
+                if '503' in error_str or 'UNAVAILABLE' in error_str:
+                    logger.warning(f'⚠️ {model_name} overloaded (503), trying next...')
+                    break  # Try next model
                     
                 # Check if it's a 404 (not found)
-                elif '404' in error_str or 'not found' in error_str:
-                    logger.warning(f'⚠️ {model_name} not available (404), trying next model...')
-                    break  # Don't retry same model, try next one
+                elif '404' in error_str or 'not found' in error_str or 'Not Found' in error_str:
+                    logger.warning(f'⚠️ {model_name} not available (404), trying next...')
+                    break  # Try next model
                 
                 # Other errors - retry with backoff
                 else:
                     if attempt < max_retries - 1:
-                        wait_time = (attempt + 1) * 2  # 2s, 4s
-                        logger.warning(f'⚠️ {model_name} failed (attempt {attempt + 1}), retrying in {wait_time}s...')
+                        wait_time = (attempt + 1) * 2
+                        logger.warning(f'⚠️ {model_name} failed, retry in {wait_time}s...')
                         time.sleep(wait_time)
                     else:
-                        logger.warning(f'❌ {model_name} failed after {max_retries} attempts')
+                        logger.warning(f'❌ {model_name} failed after retries')
                         break
     
     # All models failed
-    logger.error(f'❌ All Gemini models failed. Last error: {last_error}')
+    logger.error(f'❌ All Gemini models unavailable: {last_error}')
     raise RuntimeError(f'All Gemini models unavailable: {last_error}')
 
 
