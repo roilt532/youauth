@@ -53,24 +53,41 @@ Responde en JSON EXACTO (sin ```json):
 }}"""
     
     try:
-        # Use new google-genai SDK
+        # Use new google-genai SDK with fallbacks
         from google import genai
         
         client = genai.Client(api_key=GEMINI_API_KEY)
         
+        # Try multiple models
+        models_to_try = ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-2.5-flash']
+        
         loop = asyncio.get_event_loop()
         
-        def _analyze():
-            response = client.models.generate_content(
-                model='gemini-2.5-flash',
-                contents=prompt
-            )
-            return response.text
-        
-        raw = await loop.run_in_executor(None, _analyze)
+        for model_name in models_to_try:
+            try:
+                def _analyze():
+                    response = client.models.generate_content(
+                        model=model_name,
+                        contents=prompt
+                    )
+                    return response.text
+                
+                raw = await loop.run_in_executor(None, _analyze)
+                logger.info(f'✅ Viral analysis with {model_name}')
+                break  # Success, exit loop
+                
+            except Exception as e:
+                error_str = str(e)
+                if '503' in error_str or 'UNAVAILABLE' in error_str:
+                    logger.warning(f'⚠️ {model_name} overloaded, trying next...')
+                    if model_name == models_to_try[-1]:  # Last model
+                        raise
+                    continue
+                else:
+                    raise
         
         import json
-        raw = response.text.strip()
+        raw = raw.strip()
         for marker in ('```json', '```'):
             if raw.startswith(marker):
                 raw = raw[len(marker):]
@@ -157,23 +174,40 @@ Responde en JSON EXACTO (sin ```json):
 }}"""
     
     try:
-        # Use new google-genai SDK
+        # Use new google-genai SDK with fallbacks
         from google import genai
         
         client = genai.Client(api_key=GEMINI_API_KEY)
         
         system_instruction = 'Eres un creador experto de scripts virales para YouTube Shorts infantiles.'
         
+        # Try multiple models
+        models_to_try = ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-2.5-flash']
+        
         loop = asyncio.get_event_loop()
         
-        def _generate():
-            response = client.models.generate_content(
-                model='gemini-2.5-flash',
-                contents=f"{system_instruction}\n\n{prompt}"
-            )
-            return response.text
-        
-        raw = await loop.run_in_executor(None, _generate)
+        for model_name in models_to_try:
+            try:
+                def _generate():
+                    response = client.models.generate_content(
+                        model=model_name,
+                        contents=f"{system_instruction}\n\n{prompt}"
+                    )
+                    return response.text
+                
+                raw = await loop.run_in_executor(None, _generate)
+                logger.info(f'✅ Script generation with {model_name}')
+                break  # Success, exit loop
+                
+            except Exception as e:
+                error_str = str(e)
+                if '503' in error_str or 'UNAVAILABLE' in error_str:
+                    logger.warning(f'⚠️ {model_name} overloaded, trying next...')
+                    if model_name == models_to_try[-1]:  # Last model
+                        raise
+                    continue
+                else:
+                    raise
         
         import json
         raw = raw.strip()
