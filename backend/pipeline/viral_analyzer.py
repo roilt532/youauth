@@ -62,7 +62,7 @@ Responde en JSON EXACTO (sin ```json):
         
         def _analyze():
             response = client.models.generate_content(
-                model='gemini-2.0-flash-exp',
+                model='gemini-2.5-flash',
                 contents=prompt
             )
             return response.text
@@ -168,7 +168,7 @@ Responde en JSON EXACTO (sin ```json):
         
         def _generate():
             response = client.models.generate_content(
-                model='gemini-2.0-flash-exp',
+                model='gemini-2.5-flash',
                 contents=f"{system_instruction}\n\n{prompt}"
             )
             return response.text

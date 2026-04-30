@@ -97,7 +97,7 @@ async def _gemini_generate(system_msg: str, user_prompt: str) -> str:
         
         def _generate():
             response = client.models.generate_content(
-                model='gemini-2.0-flash-exp',
+                model='gemini-2.5-flash',  # Rápido y eficiente
                 contents=f"{system_msg}\n\n{user_prompt}"
             )
             return response.text
