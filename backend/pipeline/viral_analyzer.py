@@ -53,16 +53,21 @@ Responde en JSON EXACTO (sin ```json):
 }}"""
     
     try:
-        import google.generativeai as genai
+        # Use new google-genai SDK
+        from google import genai
         
-        genai.configure(api_key=GEMINI_API_KEY)
-        model = genai.GenerativeModel(model_name='gemini-1.5-flash')
+        client = genai.Client(api_key=GEMINI_API_KEY)
         
         loop = asyncio.get_event_loop()
-        response = await loop.run_in_executor(
-            None,
-            lambda: model.generate_content(prompt)
-        )
+        
+        def _analyze():
+            response = client.models.generate_content(
+                model='gemini-2.0-flash-exp',
+                contents=prompt
+            )
+            return response.text
+        
+        raw = await loop.run_in_executor(None, _analyze)
         
         import json
         raw = response.text.strip()
@@ -152,22 +157,26 @@ Responde en JSON EXACTO (sin ```json):
 }}"""
     
     try:
-        import google.generativeai as genai
+        # Use new google-genai SDK
+        from google import genai
         
-        genai.configure(api_key=GEMINI_API_KEY)
-        model = genai.GenerativeModel(
-            model_name='gemini-1.5-flash',
-            system_instruction='Eres un creador experto de scripts virales para YouTube Shorts infantiles.'
-        )
+        client = genai.Client(api_key=GEMINI_API_KEY)
+        
+        system_instruction = 'Eres un creador experto de scripts virales para YouTube Shorts infantiles.'
         
         loop = asyncio.get_event_loop()
-        response = await loop.run_in_executor(
-            None,
-            lambda: model.generate_content(prompt)
-        )
+        
+        def _generate():
+            response = client.models.generate_content(
+                model='gemini-2.0-flash-exp',
+                contents=f"{system_instruction}\n\n{prompt}"
+            )
+            return response.text
+        
+        raw = await loop.run_in_executor(None, _generate)
         
         import json
-        raw = response.text.strip()
+        raw = raw.strip()
         for marker in ('```json', '```'):
             if raw.startswith(marker):
                 raw = raw[len(marker):]

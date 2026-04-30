@@ -86,21 +86,42 @@ async def generate_script(
 
 
 async def _gemini_generate(system_msg: str, user_prompt: str) -> str:
-    """Generate using Google Gemini free API."""
-    import google.generativeai as genai
-
-    genai.configure(api_key=GEMINI_API_KEY)
-    model = genai.GenerativeModel(
-        model_name='gemini-1.5-flash',
-        system_instruction=system_msg
-    )
-
-    loop = asyncio.get_event_loop()
-    response = await loop.run_in_executor(
-        None,
-        lambda: model.generate_content(user_prompt)
-    )
-    return response.text
+    """Generate using Google Gemini API (new SDK)."""
+    try:
+        # Try new google-genai SDK first
+        from google import genai
+        
+        client = genai.Client(api_key=GEMINI_API_KEY)
+        
+        loop = asyncio.get_event_loop()
+        
+        def _generate():
+            response = client.models.generate_content(
+                model='gemini-2.0-flash-exp',
+                contents=f"{system_msg}\n\n{user_prompt}"
+            )
+            return response.text
+        
+        return await loop.run_in_executor(None, _generate)
+    
+    except Exception as e:
+        logger.warning(f'New Gemini SDK failed ({e}), trying gemini-pro...')
+        
+        # Fallback to legacy SDK with working model
+        import google.generativeai as genai_legacy
+        
+        genai_legacy.configure(api_key=GEMINI_API_KEY)
+        model = genai_legacy.GenerativeModel(
+            model_name='gemini-pro',
+            generation_config={'temperature': 0.9}
+        )
+        
+        loop = asyncio.get_event_loop()
+        response = await loop.run_in_executor(
+            None,
+            lambda: model.generate_content(f"{system_msg}\n\n{user_prompt}")
+        )
+        return response.text
 
 
 async def _emergent_generate(system_msg: str, user_prompt: str) -> str:
