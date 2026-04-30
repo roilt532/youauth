@@ -86,9 +86,9 @@ async def generate_script(
 
 
 async def _gemini_generate(system_msg: str, user_prompt: str) -> str:
-    """Generate using Google Gemini API (new SDK)."""
+    """Generate using Google Gemini API."""
     try:
-        # Try new google-genai SDK first
+        # Use new google-genai SDK
         from google import genai
         
         client = genai.Client(api_key=GEMINI_API_KEY)
@@ -97,31 +97,57 @@ async def _gemini_generate(system_msg: str, user_prompt: str) -> str:
         
         def _generate():
             response = client.models.generate_content(
-                model='gemini-2.5-flash',  # Rápido y eficiente
+                model='gemini-2.5-flash',
                 contents=f"{system_msg}\n\n{user_prompt}"
             )
             return response.text
         
         return await loop.run_in_executor(None, _generate)
     
+    except ImportError as ie:
+        logger.warning(f'google.genai SDK not available ({ie}), using legacy SDK...')
+        
+        # Fallback to legacy SDK
+        try:
+            import google.generativeai as genai_legacy
+            
+            genai_legacy.configure(api_key=GEMINI_API_KEY)
+            
+            # Try multiple models in order of preference
+            models_to_try = [
+                'gemini-1.5-pro',
+                'gemini-1.5-flash', 
+                'gemini-pro'
+            ]
+            
+            loop = asyncio.get_event_loop()
+            
+            for model_name in models_to_try:
+                try:
+                    model = genai_legacy.GenerativeModel(
+                        model_name=model_name,
+                        generation_config={'temperature': 0.9}
+                    )
+                    
+                    response = await loop.run_in_executor(
+                        None,
+                        lambda: model.generate_content(f"{system_msg}\n\n{user_prompt}")
+                    )
+                    logger.info(f'Using legacy model: {model_name}')
+                    return response.text
+                except Exception as model_error:
+                    logger.warning(f'Model {model_name} failed: {model_error}')
+                    continue
+            
+            raise RuntimeError('All Gemini models failed')
+            
+        except Exception as e:
+            logger.error(f'Legacy SDK also failed: {e}')
+            raise
+    
     except Exception as e:
-        logger.warning(f'New Gemini SDK failed ({e}), trying gemini-pro...')
-        
-        # Fallback to legacy SDK with working model
-        import google.generativeai as genai_legacy
-        
-        genai_legacy.configure(api_key=GEMINI_API_KEY)
-        model = genai_legacy.GenerativeModel(
-            model_name='gemini-pro',
-            generation_config={'temperature': 0.9}
-        )
-        
-        loop = asyncio.get_event_loop()
-        response = await loop.run_in_executor(
-            None,
-            lambda: model.generate_content(f"{system_msg}\n\n{user_prompt}")
-        )
-        return response.text
+        logger.error(f'Gemini generation failed: {e}')
+        raise
 
 
 async def _emergent_generate(system_msg: str, user_prompt: str) -> str:
