@@ -1,0 +1,80 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "alvaro"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = [
+    "groq==0.11.0",
+    "google-genai==1.71.0",
+    "edge-tts==7.2.8",
+    "faster-whisper==1.1.1",
+    "boto3==1.42.86",
+    "libsql-client==0.3.1",
+    "google-api-python-client==2.194.0",
+    "google-auth==2.49.1",
+    "google-auth-oauthlib==1.3.1",
+    "google-auth-httplib2==0.3.1",
+    "typer==0.12.5",
+    "loguru==0.7.3",
+    "pydantic==2.12.5",
+    "pydantic-settings==2.7.0",
+    "python-dotenv==1.2.2",
+    "PyYAML==6.0.3",
+    "httpx==0.28.1",
+    "tenacity==9.1.4",
+    "rich==14.3.3",
+]
+
+[project.optional-dependencies]
+dev = [
+    "ruff==0.8.6",
+    "black==24.10.0",
+    "mypy==1.13.0",
+    "pre-commit==4.0.1",
+    "types-PyYAML==6.0.12.20241230",
+    "types-requests==2.32.0.20241016",
+]
+test = [
+    "pytest==8.3.4",
+    "pytest-asyncio==0.24.0",
+    "pytest-cov==6.0.0",
+    "pytest-mock==3.14.0",
+]
+
+[project.scripts]
+alvaro = "alvaro.cli.main:app"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/alvaro"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+src = ["src"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "UP", "ANN", "S", "B", "A", "C4", "T20"]
+ignore = ["ANN101", "ANN102", "S101"]
+
+[tool.black]
+line-length = 100
+target-version = ["py311"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+exclude = ["tests/", "_legacy_tests/"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+addopts = "--cov=src/alvaro --cov-report=term-missing --cov-fail-under=60"
+
+[tool.coverage.run]
+source = ["src/alvaro"]
+omit = ["*/cli/main.py"]
