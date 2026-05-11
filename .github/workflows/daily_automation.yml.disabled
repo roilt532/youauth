@@ -1,10 +1,10 @@
 name: YouTube Automation Daily
 
 on:
-  schedule:
-    # Runs daily at 5pm UTC (variable posting time - anti-detection)
-    - cron: '0 17 * * *'
-    - cron: '30 14 * * 2,4'  # Tues/Thu at 2:30pm UTC for variety
+  # DISABLED - replaced by generate.yml + upload.yml in refactor/cloud-pipeline
+  # schedule:
+  #   - cron: '0 17 * * *'
+  #   - cron: '30 14 * * 2,4'
   workflow_dispatch:
     inputs:
       topic:
