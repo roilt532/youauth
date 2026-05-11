@@ -1,0 +1,35 @@
+name: Lint
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dev deps
+        run: pip install -e ".[dev,test]"
+
+      - name: ruff check
+        run: ruff check src/ tests/
+
+      - name: ruff format check
+        run: ruff format --check src/ tests/
+
+      - name: mypy
+        run: mypy src/alvaro
+
+      - name: pytest
+        run: pytest tests/unit/ -x --no-header -q
