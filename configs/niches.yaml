@@ -1,0 +1,70 @@
+niches:
+  - id: science
+    label: Curiosidades cientificas y naturaleza
+    schedule_utc: ["08:00", "14:00", "20:00"]
+    keywords:
+      - ciencia extrema
+      - naturaleza increible
+      - fisica cuantica facil
+      - biologia viral
+      - quimica cotidiana
+    tone: divulgativo, asombro controlado, datos verificables
+    hook_style: pregunta provocadora o dato contraintuitivo
+    max_duration_s: 55
+    target_audience: adultos jovenes 18-35
+
+  - id: history
+    label: Datos historicos virales
+    schedule_utc: ["08:00", "14:00", "20:00"]
+    keywords:
+      - historia oculta
+      - dato historico sorprendente
+      - civilizaciones antiguas
+      - guerras olvidadas
+      - personajes historicos reales
+    tone: narrativo, tension dramatica, rigor historico
+    hook_style: revelacion inesperada de un hecho conocido
+    max_duration_s: 55
+    target_audience: adultos 20-45
+
+  - id: mystery
+    label: Misterios sin resolver (divulgativo)
+    schedule_utc: ["08:00", "14:00", "20:00"]
+    keywords:
+      - misterio sin resolver
+      - fenomeno inexplicable
+      - caso real extrano
+      - conspiración verificable
+      - anomalia cientifica
+    tone: divulgativo, no sensacionalista, open-ended
+    hook_style: caso real presentado como enigma abierto
+    max_duration_s: 55
+    target_audience: adultos 18-40
+
+  - id: gaming_culture
+    label: Cultura gaming sin reupload
+    schedule_utc: ["08:00", "14:00", "20:00"]
+    keywords:
+      - historia de videojuegos
+      - industria gaming
+      - controversia gaming
+      - evolucion de generos
+      - impacto cultural gaming
+    tone: analitico, referencias internas, respeto al medio
+    hook_style: dato de industria o momento de quiebre cultural
+    max_duration_s: 55
+    target_audience: gamers adultos 20-40
+
+  - id: gaming_secrets
+    label: Easter eggs y datos de videojuegos
+    schedule_utc: ["08:00", "14:00", "20:00"]
+    keywords:
+      - easter egg oculto
+      - secreto de videojuego
+      - developer message
+      - glitch famoso
+      - mecanica escondida
+    tone: descubrimiento, humor seco, precision tecnica
+    hook_style: "nunca viste esto en [juego conocido]"
+    max_duration_s: 55
+    target_audience: gamers 16-35

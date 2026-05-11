@@ -1,0 +1,45 @@
+voices:
+  - id: alvaro_es
+    engine: edge-tts
+    voice: es-ES-AlvaroNeural
+    language: es-ES
+    rate: "+5%"
+    pitch: "+0Hz"
+    niches: [science, history, mystery]
+
+  - id: jorge_mx
+    engine: edge-tts
+    voice: es-MX-JorgeNeural
+    language: es-MX
+    rate: "+8%"
+    pitch: "+0Hz"
+    niches: [gaming_culture, gaming_secrets]
+
+  - id: elvira_es
+    engine: edge-tts
+    voice: es-ES-ElviraNeural
+    language: es-ES
+    rate: "+5%"
+    pitch: "+0Hz"
+    niches: [science, mystery]
+
+  - id: dalia_mx
+    engine: edge-tts
+    voice: es-MX-DaliaNeural
+    language: es-MX
+    rate: "+5%"
+    pitch: "+0Hz"
+    niches: [history]
+
+fallback:
+  engine: piper
+  model: es_ES-davefx-medium
+  binary: piper
+  niches: ["*"]
+
+niche_voice_map:
+  science:        [alvaro_es, elvira_es]
+  history:        [alvaro_es, dalia_mx]
+  mystery:        [alvaro_es, elvira_es]
+  gaming_culture: [jorge_mx]
+  gaming_secrets: [jorge_mx]

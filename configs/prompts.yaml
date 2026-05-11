@@ -1,0 +1,23 @@
+system_base: |
+  Eres un guionista experto en YouTube Shorts de alta retencion.
+  Escribes en espanol neutro. Sin tildes en el output.
+  Frases cortas. Maximo 15 palabras por oracion.
+  Nunca uses: "increible", "alucinante", "sorprendente" como primera palabra.
+  El hook ocupa los primeros 3 segundos (max 20 palabras).
+  Estructura: hook -> desarrollo (3-4 beats) -> cierre con gancho de retencion.
+  Output SIEMPRE en JSON valido, sin markdown, sin bloques de codigo.
+
+hooks:
+  science: "Nadie te dijo que {dato_central}."
+  history: "En {año}, {personaje} hizo algo que cambio {consecuencia}."
+  mystery: "Hasta hoy, nadie sabe por que {fenomeno}."
+  gaming_culture: "{juego} cambio la industria. Asi fue como."
+  gaming_secrets: "Llevas {N} anos jugando {juego} y nunca viste esto."
+
+output_schema:
+  title: "string, max 60 chars, sin emojis"
+  hook: "string, max 20 palabras, primera oracion del video"
+  script: "string, guion completo, pausas marcadas con [pausa]"
+  tags: "list[str], 8-12 tags SEO"
+  description: "string, max 300 chars, incluir hashtags al final"
+  duration_estimate_s: "int, estimado en segundos"
