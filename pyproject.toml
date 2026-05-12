@@ -57,7 +57,7 @@ src = ["src"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "UP", "ANN", "S", "B", "A", "C4", "T20"]
-ignore = ["S101"]
+ignore = ["S101", "ANN401"]
 
 [tool.black]
 line-length = 100
@@ -69,6 +69,10 @@ strict = true
 warn_return_any = true
 warn_unused_configs = true
 exclude = ["tests/", "_legacy_tests/"]
+
+[[tool.mypy.overrides]]
+module = ["libsql_client", "boto3", "botocore", "botocore.*"]
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
