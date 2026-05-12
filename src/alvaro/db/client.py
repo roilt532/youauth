@@ -47,7 +47,13 @@ class DbClient:
         return await client.batch(stmts)
 
 
+def _normalize_turso_url(url: str) -> str:
+    if url.startswith("libsql://"):
+        return "https://" + url[len("libsql://"):]
+    return url
+
+
 def build_db_client() -> DbClient:
-    url = os.environ["TURSO_DATABASE_URL"]
+    url = _normalize_turso_url(os.environ["TURSO_DATABASE_URL"])
     token = os.environ.get("TURSO_AUTH_TOKEN")
     return DbClient(url=url, auth_token=token)

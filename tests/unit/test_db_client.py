@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 from pytest_mock import MockerFixture
 
-from alvaro.db.client import DbClient, build_db_client
+from alvaro.db.client import DbClient, _normalize_turso_url, build_db_client
 
 
 @pytest.fixture
@@ -60,11 +60,19 @@ async def test_close_is_idempotent(client: DbClient, mock_libsql: MagicMock) -> 
     mock_libsql.create_client.return_value.close.assert_awaited_once()
 
 
-def test_build_db_client_reads_env(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_normalize_libsql_to_https() -> None:
+    assert _normalize_turso_url("libsql://host.turso.io") == "https://host.turso.io"
+
+
+def test_normalize_https_unchanged() -> None:
+    assert _normalize_turso_url("https://host.turso.io") == "https://host.turso.io"
+
+
+def test_build_db_client_converts_libsql_url(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("TURSO_DATABASE_URL", "libsql://env.turso.io")
     monkeypatch.setenv("TURSO_AUTH_TOKEN", "envtoken")
     db = build_db_client()
-    assert db._url == "libsql://env.turso.io"
+    assert db._url == "https://env.turso.io"
     assert db._auth_token == "envtoken"
 
 
