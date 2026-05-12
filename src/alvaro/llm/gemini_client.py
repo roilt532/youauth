@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import os
+
 from google import genai
 from google.genai import types
 
@@ -10,7 +12,10 @@ _TIMEOUT = 30.0
 
 
 class GeminiClient:
-    def __init__(self, api_key: str) -> None:
+    def __init__(self) -> None:
+        api_key = os.environ.get("GEMINI_API_KEY")
+        if api_key is None:
+            raise OSError("GEMINI_API_KEY env var not set")
         self._client = genai.Client(api_key=api_key)
 
     async def complete(self, system: str, user: str, temperature: float = 0.7) -> str:

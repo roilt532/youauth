@@ -4,7 +4,6 @@ system_base: |
   Frases cortas. Maximo 15 palabras por oracion.
   Nunca uses: "increible", "alucinante", "sorprendente" como primera palabra.
   El hook ocupa los primeros 3 segundos (max 20 palabras).
-  Estructura: hook -> desarrollo (3-4 beats) -> cierre con gancho de retencion.
   Output SIEMPRE en JSON valido, sin markdown, sin bloques de codigo.
 
 niches:
@@ -12,358 +11,524 @@ niches:
     ideation:
       template: |
         Genera exactamente 6 ideas originales de videos sobre ciencia y naturaleza.
-        Temas ya usados (NO repetir): {used_topics}
-        Distribucion de puntuaciones obligatoria: exactamente 2 ideas con score 9-10,
-        exactamente 2 con score 7-8, exactamente 2 con score 5-6.
+        Temas ya usados en los ultimos 30 dias (NO repetir): {used_topics}
+        Distribucion obligatoria de scores:
+          - exactamente 2 ideas con estimated_engagement_score 9 o 10
+          - exactamente 2 ideas con estimated_engagement_score 7 u 8
+          - exactamente 1 idea con estimated_engagement_score 5 o 6
+          - exactamente 1 idea con estimated_engagement_score 3 o 4
         Cada idea debe tener un dato real verificable como nucleo.
-        Formato JSON:
-        {{"ideas": [{{"title": "...", "hook": "...", "score": 0}}]}}
-        Ejemplos de ideas aceptables:
+        Formato JSON obligatorio:
+        {{"ideas": [
+          {{"hook": "primera frase del video max 20 palabras",
+            "topic": "tema central del video en 3-6 palabras",
+            "angle": "el angulo narrativo especifico en 5-10 palabras",
+            "estimated_engagement_score": 9}}
+        ]}}
+        Ejemplos de ideas bien formadas:
         {few_shots}
       few_shots:
-        - topic: "fisica cuantica"
+        - topic: "efecto tunel cuantico"
           output: |
-            {{"title": "El tunel cuantico que hace imposible lo imposible",
-              "hook": "Sabias que los electrones atraviesan paredes?",
-              "score": 9}}
-        - topic: "biologia extrema"
+            {{"hook": "Sabias que los electrones atraviesan paredes?",
+              "topic": "efecto tunel cuantico",
+              "angle": "aplicacion practica que ya usas sin saberlo (memorias flash)",
+              "estimated_engagement_score": 9}}
+        - topic: "tardigrado extremofilo"
           output: |
-            {{"title": "El animal que puede vivir sin agua 30 anos",
-              "hook": "Esto es un tardígrado y no lo mata nada.",
-              "score": 8}}
-        - topic: "quimica cotidiana"
+            {{"hook": "Esto es el unico animal que sobrevive en el vacio del espacio.",
+              "topic": "resistencia extrema del tardígrado",
+              "angle": "comparar sus limites con los del ser humano beat a beat",
+              "estimated_engagement_score": 8}}
+        - topic: "efecto Mpemba"
           output: |
-            {{"title": "Por que el jabon destruye bacterias tan bien",
-              "hook": "El jabon no mata germenes. Los disuelve.",
-              "score": 6}}
+            {{"hook": "El agua caliente se congela antes que la fria. Esto es real.",
+              "topic": "efecto Mpemba y por que sigue sin explicacion",
+              "angle": "historia del estudiante que lo descubrio y como lo ignoraron",
+              "estimated_engagement_score": 6}}
     scripting:
       template: |
-        Escribe un guion para YouTube Shorts sobre este tema:
-        Titulo: {title}
+        Escribe un guion completo para YouTube Shorts sobre este tema:
         Hook sugerido: {hook}
-        Voz asignada: {voice_id}
+        Tema central: {topic}
+        Angulo narrativo: {angle}
+        Nicho: {niche_id}
         Duracion maxima: {max_duration_s} segundos
-        El guion debe tener: hook (max 20 palabras), desarrollo (3-4 beats de datos
-        verificables), cierre con pregunta de retencion.
-        Pausas marcadas con [pausa]. Sin tildes.
-        Formato JSON:
-        {{"title": "...", "hook": "...", "body": "...", "voice_id": "...",
-          "duration_estimate_s": 0, "tags": ["..."], "description": "..."}}
+        Voces disponibles para este nicho (elige una): {voice_catalog}
+        Fondos disponibles (elige uno segun el tono): {background_options}
+        Estructura obligatoria:
+          - hook_text: primera oracion del video (max 20 palabras, engancha en 3 segundos)
+          - body_lines: lista de 4 a 6 oraciones cortas del desarrollo, cada una max 15 palabras
+          - payoff_text: cierre tipo cliffhanger o llamada a reflexion (segundos 50-58, max 20 palabras)
+          - total_duration_estimate_s: estimado total en segundos (debe ser <= {max_duration_s})
+          - suggested_voice_id: uno de [{voice_catalog}]
+          - suggested_background_niche: uno de [{background_options}]
+        Sin tildes. Output SOLO JSON valido.
+        Formato:
+        {{"hook_text": "...",
+          "body_lines": ["...", "...", "...", "..."],
+          "payoff_text": "...",
+          "total_duration_estimate_s": 0,
+          "suggested_voice_id": "...",
+          "suggested_background_niche": "..."}}
         Ejemplos:
         {few_shots}
       few_shots:
-        - topic: "tardigrado"
+        - topic: "tardígrado"
           output: |
-            {{"title": "El animal que sobrevive al vacio del espacio",
-              "hook": "Cual es el unico animal que sobrevive en el espacio?",
-              "body": "El tardígrado mide 1 milimetro. [pausa] Resiste radiacion letal. Resiste el vacio del espacio. Resiste temperaturas de -272 grados. [pausa] Tiene 600 millones de anos en la Tierra. [pausa] Y todavia no sabemos por que es tan resistente.",
-              "voice_id": "alvaro_es",
-              "duration_estimate_s": 42,
-              "tags": ["ciencia", "biologia", "tardígrado", "espacio", "shorts"],
-              "description": "El animal mas resistente del planeta. #ciencia #biologia #shorts"}}
-        - topic: "superconductor"
+            {{"hook_text": "Cual es el unico animal que sobrevive en el espacio?",
+              "body_lines": [
+                "El tardígrado mide 1 milimetro.",
+                "Resiste radiacion letal y el vacio del espacio.",
+                "Sobrevive temperaturas de -272 grados.",
+                "Lleva 600 millones de anos en la Tierra.",
+                "Y todavia no sabemos como lo hace."
+              ],
+              "payoff_text": "La ciencia tampoco lo entiende. Comentanos tu teoria.",
+              "total_duration_estimate_s": 42,
+              "suggested_voice_id": "alvaro_es",
+              "suggested_background_niche": "gameplay_generic"}}
+        - topic: "superconductor a temperatura ambiente"
           output: |
-            {{"title": "El material que conduce electricidad sin perder energia",
-              "hook": "Por que no tenemos cables superconductores en todo el mundo?",
-              "body": "Un superconductor conduce electricidad perfecta. [pausa] Cero resistencia. Cero perdida de energia. [pausa] El problema: necesita -196 grados para funcionar. [pausa] En 2023 se anuncio el primero a temperatura ambiente. Pero era falso.",
-              "voice_id": "alvaro_es",
-              "duration_estimate_s": 38,
-              "tags": ["fisica", "superconductor", "energia", "ciencia", "shorts"],
-              "description": "La promesa que cambiaria el mundo. #fisica #ciencia #shorts"}}
+            {{"hook_text": "Por que no tenemos cables superconductores en todo el mundo?",
+              "body_lines": [
+                "Un superconductor conduce electricidad sin perder energia.",
+                "Cero resistencia. Cero calor perdido.",
+                "El problema: necesita -196 grados para funcionar.",
+                "En 2023 se anuncio el primero a temperatura ambiente.",
+                "Pero era falso. El paper fue retractado."
+              ],
+              "payoff_text": "El dia que lo logren, el mundo cambia. Puede que ya este pasando.",
+              "total_duration_estimate_s": 40,
+              "suggested_voice_id": "elvira_es",
+              "suggested_background_niche": "minecraft_parkour"}}
         - topic: "efecto Mpemba"
           output: |
-            {{"title": "El misterio del agua caliente que se congela antes",
-              "hook": "El agua caliente se congela antes que la fria. Esto es real.",
-              "body": "En 1963 un estudiante lo descubrio haciendo helado. [pausa] Su profesor no le creyó. [pausa] Hoy se llama efecto Mpemba. [pausa] Y todavia nadie sabe exactamente por que ocurre.",
-              "voice_id": "alvaro_es",
-              "duration_estimate_s": 35,
-              "tags": ["fisica", "agua", "misterio", "efecto Mpemba", "shorts"],
-              "description": "El misterio que desafia la fisica. #fisica #misterio #shorts"}}
+            {{"hook_text": "El agua caliente se congela antes que la fria. Esto es real.",
+              "body_lines": [
+                "En 1963 un estudiante lo descubrio haciendo helado.",
+                "Su profesor no le creyó.",
+                "Hoy se llama efecto Mpemba.",
+                "La fisica clasica no lo explica bien.",
+                "Hay 40 teorias distintas. Ninguna cerrada."
+              ],
+              "payoff_text": "Todavia debatimos algo que un nino descubrio con helado.",
+              "total_duration_estimate_s": 37,
+              "suggested_voice_id": "alvaro_es",
+              "suggested_background_niche": "subway_surfers"}}
 
   history:
     ideation:
       template: |
         Genera exactamente 6 ideas originales de videos sobre historia.
-        Temas ya usados (NO repetir): {used_topics}
-        Distribucion de puntuaciones obligatoria: exactamente 2 ideas con score 9-10,
-        exactamente 2 con score 7-8, exactamente 2 con score 5-6.
-        Cada idea debe basarse en un hecho historico documentado y verificable.
-        Formato JSON:
-        {{"ideas": [{{"title": "...", "hook": "...", "score": 0}}]}}
+        Temas ya usados en los ultimos 30 dias (NO repetir): {used_topics}
+        Distribucion obligatoria de scores:
+          - exactamente 2 ideas con estimated_engagement_score 9 o 10
+          - exactamente 2 ideas con estimated_engagement_score 7 u 8
+          - exactamente 1 idea con estimated_engagement_score 5 o 6
+          - exactamente 1 idea con estimated_engagement_score 3 o 4
+        Solo hechos historicos documentados y verificables.
+        Formato JSON obligatorio:
+        {{"ideas": [
+          {{"hook": "primera frase del video max 20 palabras",
+            "topic": "hecho historico central en 3-6 palabras",
+            "angle": "angulo narrativo especifico en 5-10 palabras",
+            "estimated_engagement_score": 9}}
+        ]}}
         Ejemplos:
         {few_shots}
       few_shots:
-        - topic: "Roma antigua"
+        - topic: "ley romana proteccion esclavos"
           output: |
-            {{"title": "La ley romana que protegia a los esclavos de su dueno",
-              "hook": "En Roma, matar a tu propio esclavo era ilegal. Desde el ano 10.",
-              "score": 9}}
-        - topic: "Segunda Guerra Mundial"
+            {{"hook": "En Roma, matar a tu propio esclavo era ilegal. Desde el ano 10.",
+              "topic": "Lex Petronia y limites al poder del amo",
+              "angle": "primer derecho reconocido al esclavo en la historia occidental",
+              "estimated_engagement_score": 9}}
+        - topic: "soldado japones sin rendirse"
           output: |
-            {{"title": "El soldado japones que siguio luchando 29 anos despues del fin de la guerra",
-              "hook": "Hiroo Onoda no supo que la guerra habia terminado hasta 1974.",
-              "score": 8}}
-        - topic: "edad media"
+            {{"hook": "Hiroo Onoda siguio luchando hasta 1974. La guerra termino en 1945.",
+              "topic": "Hiroo Onoda 29 anos en la jungla filipina",
+              "angle": "lealtad extrema vs informacion bloqueada por mando militar",
+              "estimated_engagement_score": 8}}
+        - topic: "leyes suntuarias medievales"
           output: |
-            {{"title": "El gremio medieval que regulaba hasta el color de la ropa",
-              "hook": "En 1363, en Inglaterra, era ilegal vestir de cierto color si eras pobre.",
-              "score": 6}}
+            {{"hook": "En 1363 en Inglaterra, era ilegal vestir de cierto color si eras pobre.",
+              "topic": "leyes suntuarias medievales y control social por ropa",
+              "angle": "la moda como instrumento de poder estatal en la edad media",
+              "estimated_engagement_score": 5}}
     scripting:
       template: |
         Escribe un guion para YouTube Shorts sobre este tema historico:
-        Titulo: {title}
         Hook sugerido: {hook}
-        Voz asignada: {voice_id}
+        Tema central: {topic}
+        Angulo narrativo: {angle}
+        Nicho: {niche_id}
         Duracion maxima: {max_duration_s} segundos
+        Voces disponibles (elige una): {voice_catalog}
+        Fondos disponibles (elige uno): {background_options}
         Tono: narrativo, tension dramatica, rigor historico.
-        El guion debe tener: hook impactante, contexto historico (1 beat),
-        hecho central (2 beats), consecuencia o legado (1 beat), cierre.
-        Sin tildes.
-        Formato JSON:
-        {{"title": "...", "hook": "...", "body": "...", "voice_id": "...",
-          "duration_estimate_s": 0, "tags": ["..."], "description": "..."}}
+        Sin tildes. Output SOLO JSON valido.
+        Formato:
+        {{"hook_text": "...",
+          "body_lines": ["...", "...", "...", "..."],
+          "payoff_text": "...",
+          "total_duration_estimate_s": 0,
+          "suggested_voice_id": "...",
+          "suggested_background_niche": "..."}}
         Ejemplos:
         {few_shots}
       few_shots:
         - topic: "Hiroo Onoda"
           output: |
-            {{"title": "El soldado que siguio en guerra 29 anos sin saberlo",
-              "hook": "Hiroo Onoda siguio luchando hasta 1974. La guerra habia terminado en 1945.",
-              "body": "En 1945, Japon se rindio. [pausa] Onoda no lo supo. Nadie llego a decírselo en su jungla filipina. [pausa] Siguio combatiendo 29 anos mas. [pausa] En 1974 su ex-comandante viajo a buscarlo. Solo entonces Onoda entrego su arma.",
-              "voice_id": "alvaro_es",
-              "duration_estimate_s": 40,
-              "tags": ["historia", "japon", "guerra", "Onoda", "shorts"],
-              "description": "29 anos de lealtad. #historia #japon #shorts"}}
-        - topic: "ley romana"
+            {{"hook_text": "Hiroo Onoda siguio luchando hasta 1974. La guerra termino en 1945.",
+              "body_lines": [
+                "En 1945 Japon se rindio.",
+                "Onoda no lo supo. Nadie llego a su jungla filipina.",
+                "Siguio combatiendo 29 anos mas.",
+                "En 1974 su ex-comandante viajo a buscarlo.",
+                "Solo entonces entrego su arma."
+              ],
+              "payoff_text": "29 anos solo porque nadie le dijo la verdad. Piensalo.",
+              "total_duration_estimate_s": 40,
+              "suggested_voice_id": "alvaro_es",
+              "suggested_background_niche": "gameplay_generic"}}
+        - topic: "Lex Petronia"
           output: |
-            {{"title": "La ley que protegio a los esclavos en Roma",
-              "hook": "En Roma, matar a tu esclavo era un crimen desde el ano 10.",
-              "body": "La Lex Petronia del ano 10 limito los poderes del amo. [pausa] Un esclavo podia apelar al pretor. [pausa] No era libertad. Pero era una proteccion minima reconocida por el Estado. [pausa] La primera de la historia occidental.",
-              "voice_id": "alvaro_es",
-              "duration_estimate_s": 37,
-              "tags": ["historia", "Roma", "esclavitud", "ley", "shorts"],
-              "description": "El primer derecho del esclavo. #historia #Roma #shorts"}}
-        - topic: "gremios medievales"
+            {{"hook_text": "En Roma, matar a tu esclavo era un crimen. Desde el ano 10.",
+              "body_lines": [
+                "La Lex Petronia del ano 10 limito los poderes del amo.",
+                "Un esclavo podia apelar al pretor.",
+                "No era libertad.",
+                "Pero era proteccion minima reconocida por el Estado.",
+                "La primera de la historia occidental."
+              ],
+              "payoff_text": "El primer derecho del esclavo llego antes que muchos derechos actuales.",
+              "total_duration_estimate_s": 37,
+              "suggested_voice_id": "dalia_mx",
+              "suggested_background_niche": "gameplay_generic"}}
+        - topic: "leyes suntuarias"
           output: |
-            {{"title": "Cuando vestir de ciertos colores era un crimen",
-              "hook": "En 1363 en Inglaterra, la ropa que podias usar dependia de tu clase social.",
-              "body": "Las leyes suntuarias decian quien podia vestir que. [pausa] Los campesinos: solo lana marron o gris. [pausa] Solo la nobleza podia usar purpura. [pausa] Violarlo era multa, carcel, o confiscacion.",
-              "voice_id": "alvaro_es",
-              "duration_estimate_s": 36,
-              "tags": ["historia", "edad media", "moda", "ley", "shorts"],
-              "description": "La moda tambien era un privilegio. #historia #medioevo #shorts"}}
+            {{"hook_text": "En 1363 en Inglaterra, la ropa que podias vestir dependia de tu clase.",
+              "body_lines": [
+                "Las leyes suntuarias controlaban quien podia vestir que.",
+                "Campesinos: solo lana marron o gris.",
+                "Solo la nobleza podia usar purpura.",
+                "Violarlo era multa, carcel o confiscacion.",
+                "La moda era un privilegio legal."
+              ],
+              "payoff_text": "Hoy elegimos la ropa libremente. Hace 660 anos era un crimen.",
+              "total_duration_estimate_s": 36,
+              "suggested_voice_id": "alvaro_es",
+              "suggested_background_niche": "subway_surfers"}}
 
   mystery:
     ideation:
       template: |
         Genera exactamente 6 ideas de videos sobre misterios sin resolver o fenomenos inexplicados.
-        Temas ya usados (NO repetir): {used_topics}
-        Distribucion de puntuaciones obligatoria: exactamente 2 ideas con score 9-10,
-        exactamente 2 con score 7-8, exactamente 2 con score 5-6.
+        Temas ya usados en los ultimos 30 dias (NO repetir): {used_topics}
+        Distribucion obligatoria de scores:
+          - exactamente 2 ideas con estimated_engagement_score 9 o 10
+          - exactamente 2 ideas con estimated_engagement_score 7 u 8
+          - exactamente 1 idea con estimated_engagement_score 5 o 6
+          - exactamente 1 idea con estimated_engagement_score 3 o 4
         Solo casos reales documentados. Sin pseudociencia ni conspiraciones sin evidencia.
-        Formato JSON:
-        {{"ideas": [{{"title": "...", "hook": "...", "score": 0}}]}}
+        Formato JSON obligatorio:
+        {{"ideas": [
+          {{"hook": "primera frase del video max 20 palabras",
+            "topic": "caso o fenomeno central en 3-6 palabras",
+            "angle": "angulo narrativo especifico en 5-10 palabras",
+            "estimated_engagement_score": 9}}
+        ]}}
         Ejemplos:
         {few_shots}
       few_shots:
-        - topic: "Wow! signal"
+        - topic: "Wow! signal 1977"
           output: |
-            {{"title": "La senal de radio que llego del espacio y nunca se repitio",
-              "hook": "En 1977 detectaron una senal del espacio. Nunca se explico.",
-              "score": 10}}
-        - topic: "Tamam Shud"
+            {{"hook": "En 1977 detectaron una senal del espacio. Nunca se repitio ni se explico.",
+              "topic": "senal Wow! y sus teorias no resueltas",
+              "angle": "lo que la ciencia descarto y lo que todavia no puede descartar",
+              "estimated_engagement_score": 10}}
+        - topic: "caso Tamam Shud"
           output: |
-            {{"title": "El hombre sin identidad con un mensaje cifrado en el bolsillo",
-              "hook": "En 1948 encontraron un cadaver en Australia. 75 anos despues, nadie sabe quien era.",
-              "score": 8}}
-        - topic: "lluvia de peces"
+            {{"hook": "Nadie sabe quien era. Nadie sabe como murio. 75 anos despues.",
+              "topic": "hombre de la playa de Somerton sin identidad",
+              "angle": "las pistas que existen vs por que el caso sigue abierto",
+              "estimated_engagement_score": 8}}
+        - topic: "lluvia de peces Yoro"
           output: |
-            {{"title": "Los pueblos donde llueven peces cada ano",
-              "hook": "En Yoro, Honduras, cada ano llueven peces del cielo. Esto es real.",
-              "score": 6}}
+            {{"hook": "En Yoro, Honduras, cada ano llueven peces. Esto ocurre desde 1800.",
+              "topic": "lluvia de peces en Honduras y teorias cientificas",
+              "angle": "las dos teorias principales y por que ninguna cierra completamente",
+              "estimated_engagement_score": 6}}
     scripting:
       template: |
         Escribe un guion para YouTube Shorts sobre este misterio sin resolver:
-        Titulo: {title}
         Hook sugerido: {hook}
-        Voz asignada: {voice_id}
+        Tema central: {topic}
+        Angulo narrativo: {angle}
+        Nicho: {niche_id}
         Duracion maxima: {max_duration_s} segundos
+        Voces disponibles (elige una): {voice_catalog}
+        Fondos disponibles (elige uno): {background_options}
         Tono: divulgativo, no sensacionalista, final abierto.
-        El guion presenta el caso como enigma real. No afirma causas sobrenaturales.
-        Sin tildes.
-        Formato JSON:
-        {{"title": "...", "hook": "...", "body": "...", "voice_id": "...",
-          "duration_estimate_s": 0, "tags": ["..."], "description": "..."}}
+        No afirmes causas sobrenaturales. Sin tildes. Output SOLO JSON valido.
+        Formato:
+        {{"hook_text": "...",
+          "body_lines": ["...", "...", "...", "..."],
+          "payoff_text": "...",
+          "total_duration_estimate_s": 0,
+          "suggested_voice_id": "...",
+          "suggested_background_niche": "..."}}
         Ejemplos:
         {few_shots}
       few_shots:
         - topic: "Wow! signal"
           output: |
-            {{"title": "La senal del espacio que nadie pudo explicar",
-              "hook": "En 1977 una antena recibio una senal de 72 segundos. No era de la Tierra.",
-              "body": "El astrónomo Jerry Ehman la llamo Wow! y la subrayó en el papel. [pausa] Venia de la constelacion de Sagitario. [pausa] Tenia exactamente las caracteristicas que buscabamos en una senal extraterrestre. [pausa] Nunca se repitio. Nadie sabe que fue.",
-              "voice_id": "alvaro_es",
-              "duration_estimate_s": 41,
-              "tags": ["misterio", "espacio", "SETI", "Wow signal", "shorts"],
-              "description": "72 segundos que cambiaron la historia. #misterio #espacio #shorts"}}
+            {{"hook_text": "En 1977 una antena recibio 72 segundos de algo que no era de la Tierra.",
+              "body_lines": [
+                "El astronomo Jerry Ehman la llamo Wow! y la subrayó en el papel.",
+                "Venia de la constelacion de Sagitario.",
+                "Tenia exactamente las frecuencias que buscabamos.",
+                "Nunca se repitio.",
+                "Nadie ha podido explicarla."
+              ],
+              "payoff_text": "72 segundos. Nada antes ni despues. Que crees que fue?",
+              "total_duration_estimate_s": 41,
+              "suggested_voice_id": "alvaro_es",
+              "suggested_background_niche": "gameplay_generic"}}
         - topic: "Tamam Shud"
           output: |
-            {{"title": "El hombre mas misterioso del siglo XX",
-              "hook": "Nadie sabe su nombre. Nadie sabe como murio. 75 anos despues.",
-              "body": "En 1948 aparecio muerto en una playa de Australia. [pausa] Sin documentos. Sin ropa con etiquetas. [pausa] En su bolsillo: un pedazo de papel con las palabras Tamam Shud, fin en persa. [pausa] El caso sigue sin resolver.",
-              "voice_id": "alvaro_es",
-              "duration_estimate_s": 39,
-              "tags": ["misterio", "crimen", "Australia", "Tamam Shud", "shorts"],
-              "description": "El caso sin resolver mas famoso del mundo. #misterio #crimen #shorts"}}
+            {{"hook_text": "Nadie sabe su nombre. Nadie sabe como murio. 75 anos despues.",
+              "body_lines": [
+                "En 1948 aparecio muerto en una playa de Australia.",
+                "Sin documentos. Sin ropa con etiquetas.",
+                "En su bolsillo: un papel con las palabras Tamam Shud.",
+                "Fin, en persa.",
+                "El caso sigue sin resolver."
+              ],
+              "payoff_text": "Alguien sabe quien era. Y ha callado 75 anos.",
+              "total_duration_estimate_s": 39,
+              "suggested_voice_id": "elvira_es",
+              "suggested_background_niche": "subway_surfers"}}
         - topic: "lluvia de peces"
           output: |
-            {{"title": "El pueblo donde cada ano llueven peces del cielo",
-              "hook": "Yoro, Honduras. Cada mayo llueven peces. Esto ocurre desde 1800.",
-              "body": "No es una leyenda. Hay fotos, videos, testimonios de decenas de anos. [pausa] Los cientificos tienen dos teorias. Una: tornados submarinos los llevan al cielo. [pausa] Dos: vienen de ríos subterraneos. [pausa] Ninguna explica por que solo pasa aqui.",
-              "voice_id": "alvaro_es",
-              "duration_estimate_s": 38,
-              "tags": ["misterio", "lluvia", "peces", "Honduras", "shorts"],
-              "description": "Un fenomeno que la ciencia no termina de explicar. #misterio #shorts"}}
+            {{"hook_text": "Yoro, Honduras. Cada mayo llueven peces. Esto pasa desde 1800.",
+              "body_lines": [
+                "No es una leyenda. Hay fotos y testimonios de decenas de anos.",
+                "Teoria uno: tornados submarinos los suben al cielo.",
+                "Teoria dos: vienen de corrientes subterraneas.",
+                "Ninguna explica por que solo ocurre aqui.",
+                "Y por que solo en mayo."
+              ],
+              "payoff_text": "La ciencia tiene dos teorias. Ninguna cierra. Cuestion abierta.",
+              "total_duration_estimate_s": 38,
+              "suggested_voice_id": "alvaro_es",
+              "suggested_background_niche": "minecraft_parkour"}}
 
   gaming_culture:
     ideation:
       template: |
         Genera exactamente 6 ideas de videos sobre historia y cultura de videojuegos.
-        Temas ya usados (NO repetir): {used_topics}
-        Distribucion de puntuaciones obligatoria: exactamente 2 ideas con score 9-10,
-        exactamente 2 con score 7-8, exactamente 2 con score 5-6.
-        Enfoque: industria, momentos de quiebre cultural, impacto real del medio.
-        Sin reuploads ni gameplays. Solo narracion con datos verificables.
-        Formato JSON:
-        {{"ideas": [{{"title": "...", "hook": "...", "score": 0}}]}}
+        Temas ya usados en los ultimos 30 dias (NO repetir): {used_topics}
+        Distribucion obligatoria de scores:
+          - exactamente 2 ideas con estimated_engagement_score 9 o 10
+          - exactamente 2 ideas con estimated_engagement_score 7 u 8
+          - exactamente 1 idea con estimated_engagement_score 5 o 6
+          - exactamente 1 idea con estimated_engagement_score 3 o 4
+        Solo datos de industria verificables. Sin gameplays ni reuploads.
+        Formato JSON obligatorio:
+        {{"ideas": [
+          {{"hook": "primera frase del video max 20 palabras",
+            "topic": "hecho o momento de industria en 3-6 palabras",
+            "angle": "angulo narrativo especifico en 5-10 palabras",
+            "estimated_engagement_score": 9}}
+        ]}}
         Ejemplos:
         {few_shots}
       few_shots:
-        - topic: "crash 1983"
+        - topic: "crash industria videojuegos 1983"
           output: |
-            {{"title": "El colapso que casi mato a la industria del videojuego",
-              "hook": "En 1983 la industria del videojuego colapso. Perdio 3.000 millones en un ano.",
-              "score": 10}}
-        - topic: "DOOM y su impacto"
+            {{"hook": "En 1983 la industria del videojuego colapso. Perdio 3.000 millones en un ano.",
+              "topic": "crash Atari 1983 y sus causas reales",
+              "angle": "de monopolio a colapso en 18 meses: las 3 decisiones que lo causaron",
+              "estimated_engagement_score": 10}}
+        - topic: "DOOM mas instalado que Windows"
           output: |
-            {{"title": "Como DOOM redefinió lo que un videojuego podia hacer",
-              "hook": "En 1993 DOOM estaba instalado en mas PCs que Windows. No es una broma.",
-              "score": 8}}
-        - topic: "Nintendo vs SEGA"
+            {{"hook": "En 1993 DOOM estaba en mas PCs que Windows. No es una broma.",
+              "topic": "DOOM shareware y su distribucion masiva",
+              "angle": "como un modelo de distribucion gratuita cambio la industria",
+              "estimated_engagement_score": 8}}
+        - topic: "SEGA vs Nintendo anos 90"
           output: |
-            {{"title": "La guerra de consolas que definio una generacion entera",
-              "hook": "SEGA casi derrota a Nintendo en los anos 90. Casi.",
-              "score": 6}}
+            {{"hook": "SEGA tuvo el 65 por ciento del mercado en 1992. Como lo perdio todo.",
+              "topic": "guerra de consolas SEGA Genesis vs Super Nintendo",
+              "angle": "de lider de mercado a irrelevancia en 3 decisiones estrategicas",
+              "estimated_engagement_score": 6}}
     scripting:
       template: |
         Escribe un guion para YouTube Shorts sobre este tema de cultura gaming:
-        Titulo: {title}
         Hook sugerido: {hook}
-        Voz asignada: {voice_id}
+        Tema central: {topic}
+        Angulo narrativo: {angle}
+        Nicho: {niche_id}
         Duracion maxima: {max_duration_s} segundos
+        Voces disponibles (elige una): {voice_catalog}
+        Fondos disponibles (elige uno): {background_options}
         Tono: analitico, referencias internas, respeto al medio.
-        Sin tildes.
-        Formato JSON:
-        {{"title": "...", "hook": "...", "body": "...", "voice_id": "...",
-          "duration_estimate_s": 0, "tags": ["..."], "description": "..."}}
+        Sin tildes. Output SOLO JSON valido.
+        Formato:
+        {{"hook_text": "...",
+          "body_lines": ["...", "...", "...", "..."],
+          "payoff_text": "...",
+          "total_duration_estimate_s": 0,
+          "suggested_voice_id": "...",
+          "suggested_background_niche": "..."}}
         Ejemplos:
         {few_shots}
       few_shots:
         - topic: "crash 1983"
           output: |
-            {{"title": "El colapso que casi termino con los videojuegos",
-              "hook": "En 1983 la industria perdio 3.000 millones de dolares en un ano.",
-              "body": "Atari dominaba el mercado. [pausa] Luego llego E.T. el videojuego. El peor de la historia. [pausa] Atari fabrico 4 millones de copias. Vendio menos de 2. [pausa] En 1984 los padres dejaron de comprar consolas. La industria casi murio. [pausa] Nintendo la salvo un ano despues.",
-              "voice_id": "jorge_mx",
-              "duration_estimate_s": 43,
-              "tags": ["gaming", "historia", "Atari", "crash 1983", "shorts"],
-              "description": "El dia que casi murio la industria. #gaming #historia #shorts"}}
+            {{"hook_text": "En 1983 la industria perdio 3.000 millones de dolares en un ano.",
+              "body_lines": [
+                "Atari dominaba el mercado.",
+                "Luego llego E.T. el videojuego. El peor de la historia.",
+                "Atari fabrico 4 millones de copias. Vendio menos de 2.",
+                "En 1984 los padres dejaron de comprar consolas.",
+                "Nintendo la salvo un ano despues desde Japon."
+              ],
+              "payoff_text": "El peor juego de la historia casi mato a toda la industria.",
+              "total_duration_estimate_s": 43,
+              "suggested_voice_id": "jorge_mx",
+              "suggested_background_niche": "roblox_obby"}}
         - topic: "DOOM 1993"
           output: |
-            {{"title": "DOOM: el juego que tenia mas usuarios que Windows",
-              "hook": "En 1993 DOOM estaba en mas computadoras que el sistema operativo de Microsoft.",
-              "body": "id Software lo distribuyo gratis en internet. [pausa] Era shareware: juegas el primer episodio, compras el resto. [pausa] Diez millones de copias en el primer ano. [pausa] Microsoft tuvo que llamarlos para que hicieran una version de Windows. [pausa] Porque DOOM era mas importante que Windows.",
-              "voice_id": "jorge_mx",
-              "duration_estimate_s": 46,
-              "tags": ["gaming", "DOOM", "historia", "id Software", "shorts"],
-              "description": "El juego que supero a Windows. #gaming #DOOM #shorts"}}
-        - topic: "guerra consolas 90s"
+            {{"hook_text": "En 1993 DOOM estaba en mas computadoras que el sistema de Microsoft.",
+              "body_lines": [
+                "id Software lo distribuyo gratis en internet.",
+                "Era shareware: juegas el primero, compras el resto.",
+                "Diez millones de copias en el primer ano.",
+                "Microsoft tuvo que llamarlos para que hicieran una version de Windows.",
+                "Porque DOOM importaba mas que Windows."
+              ],
+              "payoff_text": "Un juego era mas relevante que el sistema operativo. Piensalo.",
+              "total_duration_estimate_s": 46,
+              "suggested_voice_id": "jorge_mx",
+              "suggested_background_niche": "minecraft_parkour"}}
+        - topic: "SEGA vs Nintendo"
           output: |
-            {{"title": "Cuando SEGA casi gano la guerra de consolas",
-              "hook": "SEGA tuvo el 65% del mercado en 1992. Como lo perdio todo.",
-              "body": "SEGA lanzó el Genesis antes que Nintendo. [pausa] Sonic era mas rapido que Mario. [pausa] La publicidad de SEGA atacaba directamente a Nintendo. [pausa] En 1992 ganaban. [pausa] Pero la Saturn fue un desastre de lanzamiento. Y Sony entro con la PlayStation.",
-              "voice_id": "jorge_mx",
-              "duration_estimate_s": 41,
-              "tags": ["gaming", "SEGA", "Nintendo", "consolas", "shorts"],
-              "description": "La guerra que definio los 90s. #gaming #SEGA #Nintendo #shorts"}}
+            {{"hook_text": "SEGA tuvo el 65 por ciento del mercado en 1992. Como lo perdio todo.",
+              "body_lines": [
+                "SEGA lanzo el Genesis antes que Nintendo.",
+                "Sonic era mas rapido que Mario.",
+                "La publicidad atacaba directamente a Nintendo.",
+                "En 1992 ganaban.",
+                "Pero la Saturn fue un desastre y Sony entro con la PlayStation."
+              ],
+              "payoff_text": "De lideres absolutos a irrelevantes en 3 anos. Por 3 decisiones.",
+              "total_duration_estimate_s": 41,
+              "suggested_voice_id": "jorge_mx",
+              "suggested_background_niche": "subway_surfers"}}
 
   gaming_secrets:
     ideation:
       template: |
-        Genera exactamente 6 ideas de videos sobre easter eggs, secretos y datos ocultos de videojuegos.
-        Temas ya usados (NO repetir): {used_topics}
-        Distribucion de puntuaciones obligatoria: exactamente 2 ideas con score 9-10,
-        exactamente 2 con score 7-8, exactamente 2 con score 5-6.
+        Genera exactamente 6 ideas de videos sobre easter eggs, secretos y datos ocultos en videojuegos.
+        Temas ya usados en los ultimos 30 dias (NO repetir): {used_topics}
+        Distribucion obligatoria de scores:
+          - exactamente 2 ideas con estimated_engagement_score 9 o 10
+          - exactamente 2 ideas con estimated_engagement_score 7 u 8
+          - exactamente 1 idea con estimated_engagement_score 5 o 6
+          - exactamente 1 idea con estimated_engagement_score 3 o 4
         Solo secretos reales documentados y verificables. Sin rumors sin fuente.
-        Formato JSON:
-        {{"ideas": [{{"title": "...", "hook": "...", "score": 0}}]}}
+        Formato JSON obligatorio:
+        {{"ideas": [
+          {{"hook": "primera frase del video max 20 palabras",
+            "topic": "secreto o easter egg especifico en 3-6 palabras",
+            "angle": "angulo narrativo especifico en 5-10 palabras",
+            "estimated_engagement_score": 9}}
+        ]}}
         Ejemplos:
         {few_shots}
       few_shots:
         - topic: "GTA San Andreas Hot Coffee"
           output: |
-            {{"title": "El secreto de GTA que provoco una crisis en el Congreso de EEUU",
-              "hook": "Habia una escena oculta en GTA San Andreas que Rockstar no queria que vieras.",
-              "score": 10}}
-        - topic: "Zelda Ocarina medallion order"
+            {{"hook": "Habia una escena oculta en GTA San Andreas que Rockstar no queria que vieras.",
+              "topic": "mod Hot Coffee y la crisis en el Congreso de EEUU",
+              "angle": "como un modder holandés provoco una crisis de 24 millones de dolares",
+              "estimated_engagement_score": 10}}
+        - topic: "Zelda Ocarina dungeon order"
           output: |
-            {{"title": "El orden secreto de los medallones en Zelda que cambia el juego",
-              "hook": "Ocarina of Time tiene un orden alternativo de dungeons que Nintendo nunca documento.",
-              "score": 7}}
-        - topic: "Minecraft herobrine"
+            {{"hook": "Ocarina of Time tiene un orden alternativo de templos que Nintendo no documento.",
+              "topic": "orden alternativo de dungeons en Ocarina of Time",
+              "angle": "como los speedrunners lo descubrieron en 1999 y nunca fue oficial",
+              "estimated_engagement_score": 7}}
+        - topic: "Herobrine en Minecraft"
           output: |
-            {{"title": "Herobrine: el personaje que Minecraft nunca tuvo pero todos vieron",
-              "hook": "Herobrine no existe en Minecraft. Pero Notch lo menciona en los changelogs desde 2010.",
-              "score": 6}}
+            {{"hook": "Herobrine nunca existio en Minecraft. Pero Notch lo puso en los changelogs.",
+              "topic": "mito de Herobrine y su relacion con Mojang",
+              "angle": "como el desarrollador alimento una leyenda falsa durante 10 anos",
+              "estimated_engagement_score": 6}}
     scripting:
       template: |
         Escribe un guion para YouTube Shorts sobre este secreto de videojuego:
-        Titulo: {title}
         Hook sugerido: {hook}
-        Voz asignada: {voice_id}
+        Tema central: {topic}
+        Angulo narrativo: {angle}
+        Nicho: {niche_id}
         Duracion maxima: {max_duration_s} segundos
+        Voces disponibles (elige una): {voice_catalog}
+        Fondos disponibles (elige uno): {background_options}
         Tono: descubrimiento, humor seco, precision tecnica.
-        Nunca afirmes algo no documentado como hecho. Sin tildes.
-        Formato JSON:
-        {{"title": "...", "hook": "...", "body": "...", "voice_id": "...",
-          "duration_estimate_s": 0, "tags": ["..."], "description": "..."}}
+        Nunca afirmes algo no documentado como hecho. Sin tildes. Output SOLO JSON valido.
+        Formato:
+        {{"hook_text": "...",
+          "body_lines": ["...", "...", "...", "..."],
+          "payoff_text": "...",
+          "total_duration_estimate_s": 0,
+          "suggested_voice_id": "...",
+          "suggested_background_niche": "..."}}
         Ejemplos:
         {few_shots}
       few_shots:
         - topic: "Hot Coffee GTA"
           output: |
-            {{"title": "El minijuego oculto que paro las ventas de GTA San Andreas",
-              "hook": "Habia una escena cortada en GTA San Andreas. Un modder la desbloqueo.",
-              "body": "Rockstar programo una secuencia explicita pero la bloqueo antes del lanzamiento. [pausa] En 2005 un modder holandés encontro el codigo. Hizo el mod Hot Coffee. [pausa] Hillary Clinton lo llevo al Congreso. GTA fue re-clasificado para adultos. [pausa] Rockstar retiro el juego de las tiendas. Perdio 24 millones de dolares.",
-              "voice_id": "jorge_mx",
-              "duration_estimate_s": 44,
-              "tags": ["gaming", "GTA", "easter egg", "secreto", "shorts"],
-              "description": "El secreto que costo 24 millones. #gaming #GTA #secreto #shorts"}}
+            {{"hook_text": "Habia una escena cortada en GTA San Andreas. Un modder la desbloqueo.",
+              "body_lines": [
+                "Rockstar programo la secuencia pero la bloqueo antes del lanzamiento.",
+                "En 2005 un modder holandés encontro el codigo.",
+                "Hizo el mod Hot Coffee.",
+                "Hillary Clinton lo llevo al Congreso.",
+                "Rockstar retiro el juego. Perdio 24 millones."
+              ],
+              "payoff_text": "Un codigo olvidado causo 24 millones en perdidas. Clasico.",
+              "total_duration_estimate_s": 44,
+              "suggested_voice_id": "jorge_mx",
+              "suggested_background_niche": "roblox_obby"}}
         - topic: "Zelda dungeon order"
           output: |
-            {{"title": "El orden alternativo de Zelda que la mayoria nunca conocio",
-              "hook": "Ocarina of Time tiene un orden de dungeons alternativo que Nintendo no documento.",
-              "body": "El juego esta disenado para un orden especifico de templos. [pausa] Pero el Fire Temple puede completarse antes que el Water Temple. [pausa] Los speedrunners lo descubrieron en 1999. [pausa] Cambia como obtienes el escudo de hierro. Y nadie lo sabe.",
-              "voice_id": "jorge_mx",
-              "duration_estimate_s": 38,
-              "tags": ["gaming", "Zelda", "secreto", "speedrun", "shorts"],
-              "description": "El secreto que los speedrunners guardaron anos. #gaming #Zelda #shorts"}}
+            {{"hook_text": "Ocarina of Time tiene un orden de templos alternativo que Nintendo ignoro.",
+              "body_lines": [
+                "El juego esta disenado para un orden especifico.",
+                "Pero el Fire Temple puede completarse antes que el Water Temple.",
+                "Los speedrunners lo descubrieron en 1999.",
+                "Cambia como obtienes el escudo de hierro.",
+                "Nintendo nunca lo documento. Nunca lo confirmo."
+              ],
+              "payoff_text": "20 anos despues, nadie oficial lo ha confirmado. Sigue activo.",
+              "total_duration_estimate_s": 38,
+              "suggested_voice_id": "jorge_mx",
+              "suggested_background_niche": "minecraft_parkour"}}
         - topic: "Herobrine Minecraft"
           output: |
-            {{"title": "Herobrine: el mito que Mojang alimento durante 10 anos",
-              "hook": "Herobrine nunca existio en Minecraft. Pero Notch lo puso en los changelogs.",
-              "body": "En 2010 aparecio una historia de un Steve sin ojos en el juego. [pausa] Era falsa. [pausa] Pero Notch empezo a poner 'removed Herobrine' en cada update. [pausa] Durante 10 anos. Como broma. Pero la leyenda se volvio parte del juego.",
-              "voice_id": "jorge_mx",
-              "duration_estimate_s": 40,
-              "tags": ["gaming", "Minecraft", "Herobrine", "mito", "shorts"],
-              "description": "La leyenda que Mojang creo en secreto. #gaming #Minecraft #shorts"}}
+            {{"hook_text": "Herobrine nunca existio en Minecraft. Pero Notch lo puso en los changelogs.",
+              "body_lines": [
+                "En 2010 aparecio una historia de un Steve sin ojos.",
+                "Era falsa.",
+                "Pero Notch empezo a poner removed Herobrine en cada update.",
+                "Durante 10 anos. Como broma.",
+                "La leyenda se volvio parte del juego."
+              ],
+              "payoff_text": "Mojang creo una leyenda falsa a proposito. Y funciono.",
+              "total_duration_estimate_s": 40,
+              "suggested_voice_id": "jorge_mx",
+              "suggested_background_niche": "minecraft_parkour"}}

@@ -42,29 +42,38 @@ def mock_groq_async() -> MagicMock:
     return mock
 
 
-async def test_groq_complete_returns_content(mock_groq_async: MagicMock) -> None:
+async def test_groq_complete_returns_content(
+    mock_groq_async: MagicMock, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("GROQ_API_KEY", "test-key")
     with patch("alvaro.llm.groq_client.groq.AsyncGroq", return_value=mock_groq_async):
-        client = GroqClient(api_key="test-key")
+        client = GroqClient()
         result = await client.complete("sys", "user")
     assert result == "hello"
 
 
-async def test_groq_complete_wraps_api_error(mock_groq_async: MagicMock) -> None:
+async def test_groq_complete_wraps_api_error(
+    mock_groq_async: MagicMock, monkeypatch: pytest.MonkeyPatch
+) -> None:
     import groq
 
+    monkeypatch.setenv("GROQ_API_KEY", "test-key")
     mock_groq_async.chat.completions.create.side_effect = groq.APIConnectionError(
         request=MagicMock()
     )
     with patch("alvaro.llm.groq_client.groq.AsyncGroq", return_value=mock_groq_async):
-        client = GroqClient(api_key="test-key")
+        client = GroqClient()
         with pytest.raises(LLMTransientError):
             await client.complete("sys", "user")
 
 
-async def test_groq_complete_empty_content(mock_groq_async: MagicMock) -> None:
+async def test_groq_complete_empty_content(
+    mock_groq_async: MagicMock, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("GROQ_API_KEY", "test-key")
     mock_groq_async.chat.completions.create.return_value.choices[0].message.content = None
     with patch("alvaro.llm.groq_client.groq.AsyncGroq", return_value=mock_groq_async):
-        client = GroqClient(api_key="test-key")
+        client = GroqClient()
         result = await client.complete("sys", "user")
     assert result == ""
 
@@ -76,24 +85,33 @@ def mock_genai() -> MagicMock:
     return mock_client
 
 
-async def test_gemini_complete_returns_text(mock_genai: MagicMock) -> None:
+async def test_gemini_complete_returns_text(
+    mock_genai: MagicMock, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("GEMINI_API_KEY", "test-key")
     with patch("alvaro.llm.gemini_client.genai.Client", return_value=mock_genai):
-        client = GeminiClient(api_key="test-key")
+        client = GeminiClient()
         result = await client.complete("sys", "user")
     assert result == "gemini-reply"
 
 
-async def test_gemini_complete_wraps_exception(mock_genai: MagicMock) -> None:
+async def test_gemini_complete_wraps_exception(
+    mock_genai: MagicMock, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("GEMINI_API_KEY", "test-key")
     mock_genai.aio.models.generate_content.side_effect = RuntimeError("boom")
     with patch("alvaro.llm.gemini_client.genai.Client", return_value=mock_genai):
-        client = GeminiClient(api_key="test-key")
+        client = GeminiClient()
         with pytest.raises(LLMTransientError):
             await client.complete("sys", "user")
 
 
-async def test_gemini_complete_empty_text(mock_genai: MagicMock) -> None:
+async def test_gemini_complete_empty_text(
+    mock_genai: MagicMock, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("GEMINI_API_KEY", "test-key")
     mock_genai.aio.models.generate_content.return_value.text = None
     with patch("alvaro.llm.gemini_client.genai.Client", return_value=mock_genai):
-        client = GeminiClient(api_key="test-key")
+        client = GeminiClient()
         result = await client.complete("sys", "user")
     assert result == ""

@@ -4,7 +4,7 @@
 # La key GEMINI_API_KEY es valida y la API esta habilitada.
 # El wrapper GeminiClient esta validado funcionalmente en unit tests:
 #   - mock 429 -> LLMTransientError (test_gemini_complete_wraps_exception)
-#   - RouterClient fallback Groq->Gemini validado con mocks (test_router_falls_back_on_transient_error)
+#   - RouterClient fallback Groq->Gemini validado con mocks (test_router_falls_back_on_transient_error)  # noqa: E501
 # Retomar con cuenta Google secundaria antes de merge final a main.
 from __future__ import annotations
 
@@ -19,9 +19,13 @@ pytestmark = pytest.mark.skipif(
 
 
 async def test_groq_complete_returns_text() -> None:
-    from alvaro.llm.groq_client import GroqClient
+    from unittest.mock import AsyncMock
 
-    client = GroqClient(api_key=os.environ["GROQ_API_KEY"])
+    from alvaro.llm.groq_client import GroqClient
+    from alvaro.llm.router import RouterClient
+
+    dummy_fallback = AsyncMock()
+    client = RouterClient(primary=GroqClient(), fallback=dummy_fallback)
     result = await client.complete(
         system="Responde solo con la palabra ok.",
         user="Di ok.",
@@ -42,7 +46,7 @@ async def test_groq_complete_returns_text() -> None:
 async def test_gemini_complete_returns_text() -> None:
     from alvaro.llm.gemini_client import GeminiClient
 
-    client = GeminiClient(api_key=os.environ.get("GEMINI_API_KEY", ""))
+    client = GeminiClient()
     result = await client.complete(
         system="Responde solo con la palabra ok.",
         user="Di ok.",

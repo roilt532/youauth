@@ -5,7 +5,8 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class IdeaCandidate:
-    title: str
     hook: str
-    score: int
+    topic: str
+    angle: str
+    estimated_engagement_score: int
     niche_id: str
