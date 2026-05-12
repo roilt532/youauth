@@ -21,7 +21,7 @@ def mock_libsql(mocker: MockerFixture) -> MagicMock:
 
 @pytest.fixture
 def client() -> DbClient:
-    return DbClient(url="libsql://test.turso.io", auth_token="tok")
+    return DbClient(url="libsql://test.turso.io", auth_token="tok")  # noqa: S106
 
 
 def test_not_connected_raises(client: DbClient) -> None:
@@ -34,7 +34,7 @@ async def test_connect_calls_create_client(
 ) -> None:
     await client.connect()
     mock_libsql.create_client.assert_called_once_with(
-        url="libsql://test.turso.io", auth_token="tok"
+        url="libsql://test.turso.io", auth_token="tok"  # noqa: S106
     )
 
 
@@ -73,7 +73,7 @@ def test_build_db_client_converts_libsql_url(monkeypatch: pytest.MonkeyPatch) ->
     monkeypatch.setenv("TURSO_AUTH_TOKEN", "envtoken")
     db = build_db_client()
     assert db._url == "https://env.turso.io"
-    assert db._auth_token == "envtoken"
+    assert db._auth_token == "envtoken"  # noqa: S105
 
 
 def test_build_db_client_missing_url_raises(monkeypatch: pytest.MonkeyPatch) -> None:

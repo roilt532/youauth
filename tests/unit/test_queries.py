@@ -108,7 +108,9 @@ class TestUploads:
     async def test_mark_done(self, db: DbClient, video: videos.Video) -> None:
         u = await uploads.insert_upload(db, video_id=video.id)
         await uploads.mark_done(db, u.id, "yt_abc123", 1600)
-        result = await db.execute("SELECT youtube_video_id, quota_units_used FROM uploads WHERE id = ?", [u.id])
+        result = await db.execute(
+            "SELECT youtube_video_id, quota_units_used FROM uploads WHERE id = ?", [u.id]
+        )
         assert result.rows[0][0] == "yt_abc123"
         assert int(result.rows[0][1]) == 1600
 
