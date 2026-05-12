@@ -31,5 +31,5 @@ jobs:
       - name: mypy
         run: mypy src/alvaro
 
-      - name: pytest
-        run: pytest tests/unit/ -x --no-header -q
+      - name: pytest unit + coverage
+        run: pytest tests/unit/ -x --no-header -q --cov=src/alvaro --cov-report=term-missing --cov-fail-under=80
