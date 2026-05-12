@@ -14,7 +14,7 @@ pytestmark = pytest.mark.skipif(
 )
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture
 async def db() -> object:
     client = build_db_client()
     await client.connect()
