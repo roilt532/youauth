@@ -7,17 +7,363 @@ system_base: |
   Estructura: hook -> desarrollo (3-4 beats) -> cierre con gancho de retencion.
   Output SIEMPRE en JSON valido, sin markdown, sin bloques de codigo.
 
-hooks:
-  science: "Nadie te dijo que {dato_central}."
-  history: "En {año}, {personaje} hizo algo que cambio {consecuencia}."
-  mystery: "Hasta hoy, nadie sabe por que {fenomeno}."
-  gaming_culture: "{juego} cambio la industria. Asi fue como."
-  gaming_secrets: "Llevas {N} anos jugando {juego} y nunca viste esto."
+niches:
+  science:
+    ideation:
+      template: |
+        Genera exactamente 6 ideas originales de videos sobre ciencia y naturaleza.
+        Temas ya usados (NO repetir): {used_topics}
+        Distribucion de puntuaciones obligatoria: exactamente 2 ideas con score 9-10,
+        exactamente 2 con score 7-8, exactamente 2 con score 5-6.
+        Cada idea debe tener un dato real verificable como nucleo.
+        Formato JSON:
+        {{"ideas": [{{"title": "...", "hook": "...", "score": 0}}]}}
+        Ejemplos de ideas aceptables:
+        {few_shots}
+      few_shots:
+        - topic: "fisica cuantica"
+          output: |
+            {{"title": "El tunel cuantico que hace imposible lo imposible",
+              "hook": "Sabias que los electrones atraviesan paredes?",
+              "score": 9}}
+        - topic: "biologia extrema"
+          output: |
+            {{"title": "El animal que puede vivir sin agua 30 anos",
+              "hook": "Esto es un tardígrado y no lo mata nada.",
+              "score": 8}}
+        - topic: "quimica cotidiana"
+          output: |
+            {{"title": "Por que el jabon destruye bacterias tan bien",
+              "hook": "El jabon no mata germenes. Los disuelve.",
+              "score": 6}}
+    scripting:
+      template: |
+        Escribe un guion para YouTube Shorts sobre este tema:
+        Titulo: {title}
+        Hook sugerido: {hook}
+        Voz asignada: {voice_id}
+        Duracion maxima: {max_duration_s} segundos
+        El guion debe tener: hook (max 20 palabras), desarrollo (3-4 beats de datos
+        verificables), cierre con pregunta de retencion.
+        Pausas marcadas con [pausa]. Sin tildes.
+        Formato JSON:
+        {{"title": "...", "hook": "...", "body": "...", "voice_id": "...",
+          "duration_estimate_s": 0, "tags": ["..."], "description": "..."}}
+        Ejemplos:
+        {few_shots}
+      few_shots:
+        - topic: "tardigrado"
+          output: |
+            {{"title": "El animal que sobrevive al vacio del espacio",
+              "hook": "Cual es el unico animal que sobrevive en el espacio?",
+              "body": "El tardígrado mide 1 milimetro. [pausa] Resiste radiacion letal. Resiste el vacio del espacio. Resiste temperaturas de -272 grados. [pausa] Tiene 600 millones de anos en la Tierra. [pausa] Y todavia no sabemos por que es tan resistente.",
+              "voice_id": "alvaro_es",
+              "duration_estimate_s": 42,
+              "tags": ["ciencia", "biologia", "tardígrado", "espacio", "shorts"],
+              "description": "El animal mas resistente del planeta. #ciencia #biologia #shorts"}}
+        - topic: "superconductor"
+          output: |
+            {{"title": "El material que conduce electricidad sin perder energia",
+              "hook": "Por que no tenemos cables superconductores en todo el mundo?",
+              "body": "Un superconductor conduce electricidad perfecta. [pausa] Cero resistencia. Cero perdida de energia. [pausa] El problema: necesita -196 grados para funcionar. [pausa] En 2023 se anuncio el primero a temperatura ambiente. Pero era falso.",
+              "voice_id": "alvaro_es",
+              "duration_estimate_s": 38,
+              "tags": ["fisica", "superconductor", "energia", "ciencia", "shorts"],
+              "description": "La promesa que cambiaria el mundo. #fisica #ciencia #shorts"}}
+        - topic: "efecto Mpemba"
+          output: |
+            {{"title": "El misterio del agua caliente que se congela antes",
+              "hook": "El agua caliente se congela antes que la fria. Esto es real.",
+              "body": "En 1963 un estudiante lo descubrio haciendo helado. [pausa] Su profesor no le creyó. [pausa] Hoy se llama efecto Mpemba. [pausa] Y todavia nadie sabe exactamente por que ocurre.",
+              "voice_id": "alvaro_es",
+              "duration_estimate_s": 35,
+              "tags": ["fisica", "agua", "misterio", "efecto Mpemba", "shorts"],
+              "description": "El misterio que desafia la fisica. #fisica #misterio #shorts"}}
 
-output_schema:
-  title: "string, max 60 chars, sin emojis"
-  hook: "string, max 20 palabras, primera oracion del video"
-  script: "string, guion completo, pausas marcadas con [pausa]"
-  tags: "list[str], 8-12 tags SEO"
-  description: "string, max 300 chars, incluir hashtags al final"
-  duration_estimate_s: "int, estimado en segundos"
+  history:
+    ideation:
+      template: |
+        Genera exactamente 6 ideas originales de videos sobre historia.
+        Temas ya usados (NO repetir): {used_topics}
+        Distribucion de puntuaciones obligatoria: exactamente 2 ideas con score 9-10,
+        exactamente 2 con score 7-8, exactamente 2 con score 5-6.
+        Cada idea debe basarse en un hecho historico documentado y verificable.
+        Formato JSON:
+        {{"ideas": [{{"title": "...", "hook": "...", "score": 0}}]}}
+        Ejemplos:
+        {few_shots}
+      few_shots:
+        - topic: "Roma antigua"
+          output: |
+            {{"title": "La ley romana que protegia a los esclavos de su dueno",
+              "hook": "En Roma, matar a tu propio esclavo era ilegal. Desde el ano 10.",
+              "score": 9}}
+        - topic: "Segunda Guerra Mundial"
+          output: |
+            {{"title": "El soldado japones que siguio luchando 29 anos despues del fin de la guerra",
+              "hook": "Hiroo Onoda no supo que la guerra habia terminado hasta 1974.",
+              "score": 8}}
+        - topic: "edad media"
+          output: |
+            {{"title": "El gremio medieval que regulaba hasta el color de la ropa",
+              "hook": "En 1363, en Inglaterra, era ilegal vestir de cierto color si eras pobre.",
+              "score": 6}}
+    scripting:
+      template: |
+        Escribe un guion para YouTube Shorts sobre este tema historico:
+        Titulo: {title}
+        Hook sugerido: {hook}
+        Voz asignada: {voice_id}
+        Duracion maxima: {max_duration_s} segundos
+        Tono: narrativo, tension dramatica, rigor historico.
+        El guion debe tener: hook impactante, contexto historico (1 beat),
+        hecho central (2 beats), consecuencia o legado (1 beat), cierre.
+        Sin tildes.
+        Formato JSON:
+        {{"title": "...", "hook": "...", "body": "...", "voice_id": "...",
+          "duration_estimate_s": 0, "tags": ["..."], "description": "..."}}
+        Ejemplos:
+        {few_shots}
+      few_shots:
+        - topic: "Hiroo Onoda"
+          output: |
+            {{"title": "El soldado que siguio en guerra 29 anos sin saberlo",
+              "hook": "Hiroo Onoda siguio luchando hasta 1974. La guerra habia terminado en 1945.",
+              "body": "En 1945, Japon se rindio. [pausa] Onoda no lo supo. Nadie llego a decírselo en su jungla filipina. [pausa] Siguio combatiendo 29 anos mas. [pausa] En 1974 su ex-comandante viajo a buscarlo. Solo entonces Onoda entrego su arma.",
+              "voice_id": "alvaro_es",
+              "duration_estimate_s": 40,
+              "tags": ["historia", "japon", "guerra", "Onoda", "shorts"],
+              "description": "29 anos de lealtad. #historia #japon #shorts"}}
+        - topic: "ley romana"
+          output: |
+            {{"title": "La ley que protegio a los esclavos en Roma",
+              "hook": "En Roma, matar a tu esclavo era un crimen desde el ano 10.",
+              "body": "La Lex Petronia del ano 10 limito los poderes del amo. [pausa] Un esclavo podia apelar al pretor. [pausa] No era libertad. Pero era una proteccion minima reconocida por el Estado. [pausa] La primera de la historia occidental.",
+              "voice_id": "alvaro_es",
+              "duration_estimate_s": 37,
+              "tags": ["historia", "Roma", "esclavitud", "ley", "shorts"],
+              "description": "El primer derecho del esclavo. #historia #Roma #shorts"}}
+        - topic: "gremios medievales"
+          output: |
+            {{"title": "Cuando vestir de ciertos colores era un crimen",
+              "hook": "En 1363 en Inglaterra, la ropa que podias usar dependia de tu clase social.",
+              "body": "Las leyes suntuarias decian quien podia vestir que. [pausa] Los campesinos: solo lana marron o gris. [pausa] Solo la nobleza podia usar purpura. [pausa] Violarlo era multa, carcel, o confiscacion.",
+              "voice_id": "alvaro_es",
+              "duration_estimate_s": 36,
+              "tags": ["historia", "edad media", "moda", "ley", "shorts"],
+              "description": "La moda tambien era un privilegio. #historia #medioevo #shorts"}}
+
+  mystery:
+    ideation:
+      template: |
+        Genera exactamente 6 ideas de videos sobre misterios sin resolver o fenomenos inexplicados.
+        Temas ya usados (NO repetir): {used_topics}
+        Distribucion de puntuaciones obligatoria: exactamente 2 ideas con score 9-10,
+        exactamente 2 con score 7-8, exactamente 2 con score 5-6.
+        Solo casos reales documentados. Sin pseudociencia ni conspiraciones sin evidencia.
+        Formato JSON:
+        {{"ideas": [{{"title": "...", "hook": "...", "score": 0}}]}}
+        Ejemplos:
+        {few_shots}
+      few_shots:
+        - topic: "Wow! signal"
+          output: |
+            {{"title": "La senal de radio que llego del espacio y nunca se repitio",
+              "hook": "En 1977 detectaron una senal del espacio. Nunca se explico.",
+              "score": 10}}
+        - topic: "Tamam Shud"
+          output: |
+            {{"title": "El hombre sin identidad con un mensaje cifrado en el bolsillo",
+              "hook": "En 1948 encontraron un cadaver en Australia. 75 anos despues, nadie sabe quien era.",
+              "score": 8}}
+        - topic: "lluvia de peces"
+          output: |
+            {{"title": "Los pueblos donde llueven peces cada ano",
+              "hook": "En Yoro, Honduras, cada ano llueven peces del cielo. Esto es real.",
+              "score": 6}}
+    scripting:
+      template: |
+        Escribe un guion para YouTube Shorts sobre este misterio sin resolver:
+        Titulo: {title}
+        Hook sugerido: {hook}
+        Voz asignada: {voice_id}
+        Duracion maxima: {max_duration_s} segundos
+        Tono: divulgativo, no sensacionalista, final abierto.
+        El guion presenta el caso como enigma real. No afirma causas sobrenaturales.
+        Sin tildes.
+        Formato JSON:
+        {{"title": "...", "hook": "...", "body": "...", "voice_id": "...",
+          "duration_estimate_s": 0, "tags": ["..."], "description": "..."}}
+        Ejemplos:
+        {few_shots}
+      few_shots:
+        - topic: "Wow! signal"
+          output: |
+            {{"title": "La senal del espacio que nadie pudo explicar",
+              "hook": "En 1977 una antena recibio una senal de 72 segundos. No era de la Tierra.",
+              "body": "El astrónomo Jerry Ehman la llamo Wow! y la subrayó en el papel. [pausa] Venia de la constelacion de Sagitario. [pausa] Tenia exactamente las caracteristicas que buscabamos en una senal extraterrestre. [pausa] Nunca se repitio. Nadie sabe que fue.",
+              "voice_id": "alvaro_es",
+              "duration_estimate_s": 41,
+              "tags": ["misterio", "espacio", "SETI", "Wow signal", "shorts"],
+              "description": "72 segundos que cambiaron la historia. #misterio #espacio #shorts"}}
+        - topic: "Tamam Shud"
+          output: |
+            {{"title": "El hombre mas misterioso del siglo XX",
+              "hook": "Nadie sabe su nombre. Nadie sabe como murio. 75 anos despues.",
+              "body": "En 1948 aparecio muerto en una playa de Australia. [pausa] Sin documentos. Sin ropa con etiquetas. [pausa] En su bolsillo: un pedazo de papel con las palabras Tamam Shud, fin en persa. [pausa] El caso sigue sin resolver.",
+              "voice_id": "alvaro_es",
+              "duration_estimate_s": 39,
+              "tags": ["misterio", "crimen", "Australia", "Tamam Shud", "shorts"],
+              "description": "El caso sin resolver mas famoso del mundo. #misterio #crimen #shorts"}}
+        - topic: "lluvia de peces"
+          output: |
+            {{"title": "El pueblo donde cada ano llueven peces del cielo",
+              "hook": "Yoro, Honduras. Cada mayo llueven peces. Esto ocurre desde 1800.",
+              "body": "No es una leyenda. Hay fotos, videos, testimonios de decenas de anos. [pausa] Los cientificos tienen dos teorias. Una: tornados submarinos los llevan al cielo. [pausa] Dos: vienen de ríos subterraneos. [pausa] Ninguna explica por que solo pasa aqui.",
+              "voice_id": "alvaro_es",
+              "duration_estimate_s": 38,
+              "tags": ["misterio", "lluvia", "peces", "Honduras", "shorts"],
+              "description": "Un fenomeno que la ciencia no termina de explicar. #misterio #shorts"}}
+
+  gaming_culture:
+    ideation:
+      template: |
+        Genera exactamente 6 ideas de videos sobre historia y cultura de videojuegos.
+        Temas ya usados (NO repetir): {used_topics}
+        Distribucion de puntuaciones obligatoria: exactamente 2 ideas con score 9-10,
+        exactamente 2 con score 7-8, exactamente 2 con score 5-6.
+        Enfoque: industria, momentos de quiebre cultural, impacto real del medio.
+        Sin reuploads ni gameplays. Solo narracion con datos verificables.
+        Formato JSON:
+        {{"ideas": [{{"title": "...", "hook": "...", "score": 0}}]}}
+        Ejemplos:
+        {few_shots}
+      few_shots:
+        - topic: "crash 1983"
+          output: |
+            {{"title": "El colapso que casi mato a la industria del videojuego",
+              "hook": "En 1983 la industria del videojuego colapso. Perdio 3.000 millones en un ano.",
+              "score": 10}}
+        - topic: "DOOM y su impacto"
+          output: |
+            {{"title": "Como DOOM redefinió lo que un videojuego podia hacer",
+              "hook": "En 1993 DOOM estaba instalado en mas PCs que Windows. No es una broma.",
+              "score": 8}}
+        - topic: "Nintendo vs SEGA"
+          output: |
+            {{"title": "La guerra de consolas que definio una generacion entera",
+              "hook": "SEGA casi derrota a Nintendo en los anos 90. Casi.",
+              "score": 6}}
+    scripting:
+      template: |
+        Escribe un guion para YouTube Shorts sobre este tema de cultura gaming:
+        Titulo: {title}
+        Hook sugerido: {hook}
+        Voz asignada: {voice_id}
+        Duracion maxima: {max_duration_s} segundos
+        Tono: analitico, referencias internas, respeto al medio.
+        Sin tildes.
+        Formato JSON:
+        {{"title": "...", "hook": "...", "body": "...", "voice_id": "...",
+          "duration_estimate_s": 0, "tags": ["..."], "description": "..."}}
+        Ejemplos:
+        {few_shots}
+      few_shots:
+        - topic: "crash 1983"
+          output: |
+            {{"title": "El colapso que casi termino con los videojuegos",
+              "hook": "En 1983 la industria perdio 3.000 millones de dolares en un ano.",
+              "body": "Atari dominaba el mercado. [pausa] Luego llego E.T. el videojuego. El peor de la historia. [pausa] Atari fabrico 4 millones de copias. Vendio menos de 2. [pausa] En 1984 los padres dejaron de comprar consolas. La industria casi murio. [pausa] Nintendo la salvo un ano despues.",
+              "voice_id": "jorge_mx",
+              "duration_estimate_s": 43,
+              "tags": ["gaming", "historia", "Atari", "crash 1983", "shorts"],
+              "description": "El dia que casi murio la industria. #gaming #historia #shorts"}}
+        - topic: "DOOM 1993"
+          output: |
+            {{"title": "DOOM: el juego que tenia mas usuarios que Windows",
+              "hook": "En 1993 DOOM estaba en mas computadoras que el sistema operativo de Microsoft.",
+              "body": "id Software lo distribuyo gratis en internet. [pausa] Era shareware: juegas el primer episodio, compras el resto. [pausa] Diez millones de copias en el primer ano. [pausa] Microsoft tuvo que llamarlos para que hicieran una version de Windows. [pausa] Porque DOOM era mas importante que Windows.",
+              "voice_id": "jorge_mx",
+              "duration_estimate_s": 46,
+              "tags": ["gaming", "DOOM", "historia", "id Software", "shorts"],
+              "description": "El juego que supero a Windows. #gaming #DOOM #shorts"}}
+        - topic: "guerra consolas 90s"
+          output: |
+            {{"title": "Cuando SEGA casi gano la guerra de consolas",
+              "hook": "SEGA tuvo el 65% del mercado en 1992. Como lo perdio todo.",
+              "body": "SEGA lanzó el Genesis antes que Nintendo. [pausa] Sonic era mas rapido que Mario. [pausa] La publicidad de SEGA atacaba directamente a Nintendo. [pausa] En 1992 ganaban. [pausa] Pero la Saturn fue un desastre de lanzamiento. Y Sony entro con la PlayStation.",
+              "voice_id": "jorge_mx",
+              "duration_estimate_s": 41,
+              "tags": ["gaming", "SEGA", "Nintendo", "consolas", "shorts"],
+              "description": "La guerra que definio los 90s. #gaming #SEGA #Nintendo #shorts"}}
+
+  gaming_secrets:
+    ideation:
+      template: |
+        Genera exactamente 6 ideas de videos sobre easter eggs, secretos y datos ocultos de videojuegos.
+        Temas ya usados (NO repetir): {used_topics}
+        Distribucion de puntuaciones obligatoria: exactamente 2 ideas con score 9-10,
+        exactamente 2 con score 7-8, exactamente 2 con score 5-6.
+        Solo secretos reales documentados y verificables. Sin rumors sin fuente.
+        Formato JSON:
+        {{"ideas": [{{"title": "...", "hook": "...", "score": 0}}]}}
+        Ejemplos:
+        {few_shots}
+      few_shots:
+        - topic: "GTA San Andreas Hot Coffee"
+          output: |
+            {{"title": "El secreto de GTA que provoco una crisis en el Congreso de EEUU",
+              "hook": "Habia una escena oculta en GTA San Andreas que Rockstar no queria que vieras.",
+              "score": 10}}
+        - topic: "Zelda Ocarina medallion order"
+          output: |
+            {{"title": "El orden secreto de los medallones en Zelda que cambia el juego",
+              "hook": "Ocarina of Time tiene un orden alternativo de dungeons que Nintendo nunca documento.",
+              "score": 7}}
+        - topic: "Minecraft herobrine"
+          output: |
+            {{"title": "Herobrine: el personaje que Minecraft nunca tuvo pero todos vieron",
+              "hook": "Herobrine no existe en Minecraft. Pero Notch lo menciona en los changelogs desde 2010.",
+              "score": 6}}
+    scripting:
+      template: |
+        Escribe un guion para YouTube Shorts sobre este secreto de videojuego:
+        Titulo: {title}
+        Hook sugerido: {hook}
+        Voz asignada: {voice_id}
+        Duracion maxima: {max_duration_s} segundos
+        Tono: descubrimiento, humor seco, precision tecnica.
+        Nunca afirmes algo no documentado como hecho. Sin tildes.
+        Formato JSON:
+        {{"title": "...", "hook": "...", "body": "...", "voice_id": "...",
+          "duration_estimate_s": 0, "tags": ["..."], "description": "..."}}
+        Ejemplos:
+        {few_shots}
+      few_shots:
+        - topic: "Hot Coffee GTA"
+          output: |
+            {{"title": "El minijuego oculto que paro las ventas de GTA San Andreas",
+              "hook": "Habia una escena cortada en GTA San Andreas. Un modder la desbloqueo.",
+              "body": "Rockstar programo una secuencia explicita pero la bloqueo antes del lanzamiento. [pausa] En 2005 un modder holandés encontro el codigo. Hizo el mod Hot Coffee. [pausa] Hillary Clinton lo llevo al Congreso. GTA fue re-clasificado para adultos. [pausa] Rockstar retiro el juego de las tiendas. Perdio 24 millones de dolares.",
+              "voice_id": "jorge_mx",
+              "duration_estimate_s": 44,
+              "tags": ["gaming", "GTA", "easter egg", "secreto", "shorts"],
+              "description": "El secreto que costo 24 millones. #gaming #GTA #secreto #shorts"}}
+        - topic: "Zelda dungeon order"
+          output: |
+            {{"title": "El orden alternativo de Zelda que la mayoria nunca conocio",
+              "hook": "Ocarina of Time tiene un orden de dungeons alternativo que Nintendo no documento.",
+              "body": "El juego esta disenado para un orden especifico de templos. [pausa] Pero el Fire Temple puede completarse antes que el Water Temple. [pausa] Los speedrunners lo descubrieron en 1999. [pausa] Cambia como obtienes el escudo de hierro. Y nadie lo sabe.",
+              "voice_id": "jorge_mx",
+              "duration_estimate_s": 38,
+              "tags": ["gaming", "Zelda", "secreto", "speedrun", "shorts"],
+              "description": "El secreto que los speedrunners guardaron anos. #gaming #Zelda #shorts"}}
+        - topic: "Herobrine Minecraft"
+          output: |
+            {{"title": "Herobrine: el mito que Mojang alimento durante 10 anos",
+              "hook": "Herobrine nunca existio en Minecraft. Pero Notch lo puso en los changelogs.",
+              "body": "En 2010 aparecio una historia de un Steve sin ojos en el juego. [pausa] Era falsa. [pausa] Pero Notch empezo a poner 'removed Herobrine' en cada update. [pausa] Durante 10 anos. Como broma. Pero la leyenda se volvio parte del juego.",
+              "voice_id": "jorge_mx",
+              "duration_estimate_s": 40,
+              "tags": ["gaming", "Minecraft", "Herobrine", "mito", "shorts"],
+              "description": "La leyenda que Mojang creo en secreto. #gaming #Minecraft #shorts"}}
