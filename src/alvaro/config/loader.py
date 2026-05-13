@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
@@ -31,6 +31,9 @@ class VoiceConfig:
     rate: str
     pitch: str
     niches: list[str]
+    gender: str = "neutral"
+    style: str = "conversational"
+    wpm_hint: int = 150
 
 
 @dataclass(frozen=True)
@@ -39,6 +42,8 @@ class FallbackVoiceConfig:
     model: str
     binary: str
     niches: list[str]
+    hf_repo: str = "rhasspy/piper-voices"
+    languages: list[str] = field(default_factory=list)
 
 
 @dataclass(frozen=True)
@@ -108,6 +113,9 @@ def load_voices(configs_dir: Path = _CONFIGS_DIR) -> VoicesConfig:
             rate=v["rate"],
             pitch=v["pitch"],
             niches=list(v["niches"]),
+            gender=v.get("gender", "neutral"),
+            style=v.get("style", "conversational"),
+            wpm_hint=int(v.get("wpm_hint", 150)),
         )
         for v in raw["voices"]
     ]
@@ -117,6 +125,8 @@ def load_voices(configs_dir: Path = _CONFIGS_DIR) -> VoicesConfig:
         model=fb["model"],
         binary=fb["binary"],
         niches=list(fb["niches"]),
+        hf_repo=fb.get("hf_repo", "rhasspy/piper-voices"),
+        languages=list(fb.get("languages", [])),
     )
     return VoicesConfig(
         voices=voices,

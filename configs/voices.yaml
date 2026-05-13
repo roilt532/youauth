@@ -5,6 +5,9 @@ voices:
     language: es-ES
     rate: "+5%"
     pitch: "+0Hz"
+    gender: male
+    style: conversational
+    wpm_hint: 155
     niches: [science, history, mystery]
 
   - id: jorge_mx
@@ -13,6 +16,9 @@ voices:
     language: es-MX
     rate: "+8%"
     pitch: "+0Hz"
+    gender: male
+    style: energetic
+    wpm_hint: 160
     niches: [gaming_culture, gaming_secrets]
 
   - id: elvira_es
@@ -21,6 +27,9 @@ voices:
     language: es-ES
     rate: "+5%"
     pitch: "+0Hz"
+    gender: female
+    style: conversational
+    wpm_hint: 150
     niches: [science, mystery]
 
   - id: dalia_mx
@@ -29,12 +38,17 @@ voices:
     language: es-MX
     rate: "+5%"
     pitch: "+0Hz"
+    gender: female
+    style: storytelling
+    wpm_hint: 145
     niches: [history]
 
 fallback:
   engine: piper
   model: es_ES-davefx-medium
   binary: piper
+  hf_repo: rhasspy/piper-voices
+  languages: [es-ES, es-MX]
   niches: ["*"]
 
 niche_voice_map:
