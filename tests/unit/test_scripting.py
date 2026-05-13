@@ -91,7 +91,7 @@ def _make_script_json(voice_id: str = "alvaro_es", hook: str = "Por que?") -> st
             "hook_text": hook,
             "body_lines": ["linea uno", "linea dos", "linea tres"],
             "payoff_text": "Y esto es todo.",
-            "total_duration_estimate_s": 46,
+            "total_duration_estimate_s": 52,
             "suggested_voice_id": voice_id,
             "suggested_background_niche": "minecraft_parkour",
         }
@@ -130,7 +130,7 @@ class TestValidateScript:
         hook_text: str = "Por que existe el universo?",
         voice_id: str = "alvaro_es",
         background: str = "minecraft_parkour",
-        duration_s: int = 37,
+        duration_s: int = 52,
     ) -> Script:
         return Script(
             hook_text=hook_text,
@@ -152,10 +152,15 @@ class TestValidateScript:
         assert result.ok is False
         assert any("hook" in e for e in result.errors)
 
+    def test_duration_below_min_reported(self) -> None:
+        result = validate_script(self._make_script(duration_s=45), ["alvaro_es"], 55)
+        assert result.ok is False
+        assert any("below minimum" in e for e in result.errors)
+
     def test_duration_exceeded_reported(self) -> None:
         result = validate_script(self._make_script(duration_s=200), ["alvaro_es"], 55)
         assert result.ok is False
-        assert any("duration" in e for e in result.errors)
+        assert any("exceeds max" in e for e in result.errors)
 
     def test_voice_id_mismatch_reported(self) -> None:
         result = validate_script(self._make_script(voice_id="wrong_voice"), ["alvaro_es"], 55)

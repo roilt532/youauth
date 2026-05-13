@@ -34,6 +34,12 @@ def validate_script(
     if not _hook_is_valid(script.hook_text, language):
         errors.append("hook_text must end with '?' or start with a recognized trigger word")
 
+    _min_duration_s = 50
+    if script.total_duration_estimate_s < _min_duration_s:
+        errors.append(
+            f"duration {script.total_duration_estimate_s}s below minimum {_min_duration_s}s"
+        )
+
     if script.total_duration_estimate_s > max_duration_s:
         errors.append(
             f"duration {script.total_duration_estimate_s}s exceeds max {max_duration_s}s"

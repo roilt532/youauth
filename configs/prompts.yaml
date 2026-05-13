@@ -58,9 +58,9 @@ niches:
         Fondos disponibles (elige uno segun el tono): {background_options}
         Estructura obligatoria:
           - hook_text: OBLIGATORIO: termina en "?" o empieza con Sabias/Nunca/Cual/Como/Cuando/Por que/Donde/Quien/Esto/En/Nadie/Habia (max 20 palabras)
-          - body_lines: lista de 4 a 6 oraciones cortas del desarrollo, cada una max 15 palabras
-          - payoff_text: cierre tipo cliffhanger o llamada a reflexion (segundos 50-58, max 20 palabras)
-          - total_duration_estimate_s: estimado total en segundos (debe ser <= {max_duration_s})
+          - body_lines: OBLIGATORIO entre 6 y 8 oraciones, NUNCA menos de 6, cada una max 15 palabras
+          - payoff_text: cierre tipo cliffhanger o llamada a reflexion (max 20 palabras)
+          - total_duration_estimate_s: OBJETIVO 52-58 segundos, NUNCA menos de 50, maximo {max_duration_s}
           - suggested_voice_id: uno de [{voice_catalog}]
           - suggested_background_niche: uno de [{background_options}]
         Sin tildes. Output SOLO JSON valido.
@@ -82,10 +82,11 @@ niches:
                 "Resiste radiacion letal y el vacio del espacio.",
                 "Sobrevive temperaturas de -272 grados.",
                 "Lleva 600 millones de anos en la Tierra.",
-                "Y todavia no sabemos como lo hace."
+                "Y todavia no sabemos como lo hace.",
+                "Si lo descubrimos, podriamos proteger humanos de radiacion."
               ],
               "payoff_text": "La ciencia tampoco lo entiende. Comentanos tu teoria.",
-              "total_duration_estimate_s": 42,
+              "total_duration_estimate_s": 53,
               "suggested_voice_id": "alvaro_es",
               "suggested_background_niche": "gameplay_generic"}}
         - topic: "superconductor a temperatura ambiente"
@@ -96,10 +97,11 @@ niches:
                 "Cero resistencia. Cero calor perdido.",
                 "El problema: necesita -196 grados para funcionar.",
                 "En 2023 se anuncio el primero a temperatura ambiente.",
-                "Pero era falso. El paper fue retractado."
+                "Pero era falso. El paper fue retractado.",
+                "La carrera sigue. Varios laboratorios estan cerca."
               ],
               "payoff_text": "El dia que lo logren, el mundo cambia. Puede que ya este pasando.",
-              "total_duration_estimate_s": 40,
+              "total_duration_estimate_s": 52,
               "suggested_voice_id": "elvira_es",
               "suggested_background_niche": "minecraft_parkour"}}
         - topic: "efecto Mpemba"
@@ -110,10 +112,11 @@ niches:
                 "Su profesor no le creyó.",
                 "Hoy se llama efecto Mpemba.",
                 "La fisica clasica no lo explica bien.",
-                "Hay 40 teorias distintas. Ninguna cerrada."
+                "Hay 40 teorias distintas. Ninguna cerrada.",
+                "En 2016 fisicos cuanticos lo replicaron con moleculas."
               ],
               "payoff_text": "Todavia debatimos algo que un nino descubrio con helado.",
-              "total_duration_estimate_s": 37,
+              "total_duration_estimate_s": 52,
               "suggested_voice_id": "alvaro_es",
               "suggested_background_niche": "subway_surfers"}}
 
@@ -168,10 +171,12 @@ niches:
         Fondos disponibles (elige uno): {background_options}
         Tono: narrativo, tension dramatica, rigor historico.
         REGLA: hook_text DEBE terminar en "?" o empezar con: Sabias/Nunca/Cual/Como/Cuando/Por que/Donde/Quien/Esto/En/Nadie/Habia
+        REGLA: body_lines DEBE tener entre 6 y 8 oraciones, NUNCA menos de 6
+        REGLA: total_duration_estimate_s OBJETIVO 52-58 segundos, NUNCA menos de 50
         Sin tildes. Output SOLO JSON valido.
         Formato:
         {{"hook_text": "...",
-          "body_lines": ["...", "...", "...", "..."],
+          "body_lines": ["...", "...", "...", "...", "...", "..."],
           "payoff_text": "...",
           "total_duration_estimate_s": 0,
           "suggested_voice_id": "...",
@@ -187,10 +192,11 @@ niches:
                 "Onoda no lo supo. Nadie llego a su jungla filipina.",
                 "Siguio combatiendo 29 anos mas.",
                 "En 1974 su ex-comandante viajo a buscarlo.",
-                "Solo entonces entrego su arma."
+                "Solo entonces entrego su arma.",
+                "Recibio todos sus honores militares. Nunca se arrepintio."
               ],
               "payoff_text": "29 anos solo porque nadie le dijo la verdad. Piensalo.",
-              "total_duration_estimate_s": 40,
+              "total_duration_estimate_s": 52,
               "suggested_voice_id": "alvaro_es",
               "suggested_background_niche": "gameplay_generic"}}
         - topic: "Lex Petronia"
@@ -201,10 +207,11 @@ niches:
                 "Un esclavo podia apelar al pretor.",
                 "No era libertad.",
                 "Pero era proteccion minima reconocida por el Estado.",
-                "La primera de la historia occidental."
+                "La primera de la historia occidental.",
+                "Cien anos despues, Adriano extendio esas protecciones."
               ],
               "payoff_text": "El primer derecho del esclavo llego antes que muchos derechos actuales.",
-              "total_duration_estimate_s": 37,
+              "total_duration_estimate_s": 52,
               "suggested_voice_id": "dalia_mx",
               "suggested_background_niche": "gameplay_generic"}}
         - topic: "leyes suntuarias"
@@ -215,10 +222,11 @@ niches:
                 "Campesinos: solo lana marron o gris.",
                 "Solo la nobleza podia usar purpura.",
                 "Violarlo era multa, carcel o confiscacion.",
-                "La moda era un privilegio legal."
+                "La moda era un privilegio legal.",
+                "En Florencia, portar joyas sin ser noble era ilegal."
               ],
               "payoff_text": "Hoy elegimos la ropa libremente. Hace 660 anos era un crimen.",
-              "total_duration_estimate_s": 36,
+              "total_duration_estimate_s": 52,
               "suggested_voice_id": "alvaro_es",
               "suggested_background_niche": "subway_surfers"}}
 
@@ -273,10 +281,12 @@ niches:
         Fondos disponibles (elige uno): {background_options}
         Tono: divulgativo, no sensacionalista, final abierto.
         REGLA: hook_text DEBE terminar en "?" o empezar con: Sabias/Nunca/Cual/Como/Cuando/Por que/Donde/Quien/Esto/En/Nadie/Habia
+        REGLA: body_lines DEBE tener entre 6 y 8 oraciones, NUNCA menos de 6
+        REGLA: total_duration_estimate_s OBJETIVO 52-58 segundos, NUNCA menos de 50
         No afirmes causas sobrenaturales. Sin tildes. Output SOLO JSON valido.
         Formato:
         {{"hook_text": "...",
-          "body_lines": ["...", "...", "...", "..."],
+          "body_lines": ["...", "...", "...", "...", "...", "..."],
           "payoff_text": "...",
           "total_duration_estimate_s": 0,
           "suggested_voice_id": "...",
@@ -292,10 +302,11 @@ niches:
                 "Venia de la constelacion de Sagitario.",
                 "Tenia exactamente las frecuencias que buscabamos.",
                 "Nunca se repitio.",
-                "Nadie ha podido explicarla."
+                "Nadie ha podido explicarla.",
+                "En 2016 unos cometas fueron culpados. Pocos en la comunidad lo aceptaron."
               ],
               "payoff_text": "72 segundos. Nada antes ni despues. Que crees que fue?",
-              "total_duration_estimate_s": 41,
+              "total_duration_estimate_s": 52,
               "suggested_voice_id": "alvaro_es",
               "suggested_background_niche": "gameplay_generic"}}
         - topic: "Tamam Shud"
@@ -306,10 +317,11 @@ niches:
                 "Sin documentos. Sin ropa con etiquetas.",
                 "En su bolsillo: un papel con las palabras Tamam Shud.",
                 "Fin, en persa.",
-                "El caso sigue sin resolver."
+                "El caso sigue sin resolver.",
+                "En 2022 analisis de ADN sugirieron un posible nombre. No confirmado."
               ],
               "payoff_text": "Alguien sabe quien era. Y ha callado 75 anos.",
-              "total_duration_estimate_s": 39,
+              "total_duration_estimate_s": 52,
               "suggested_voice_id": "elvira_es",
               "suggested_background_niche": "subway_surfers"}}
         - topic: "lluvia de peces"
@@ -320,10 +332,11 @@ niches:
                 "Teoria uno: tornados submarinos los suben al cielo.",
                 "Teoria dos: vienen de corrientes subterraneas.",
                 "Ninguna explica por que solo ocurre aqui.",
-                "Y por que solo en mayo."
+                "Y por que solo en mayo.",
+                "Nadie ha filmado los peces cayendo desde el cielo todavia."
               ],
               "payoff_text": "La ciencia tiene dos teorias. Ninguna cierra. Cuestion abierta.",
-              "total_duration_estimate_s": 38,
+              "total_duration_estimate_s": 52,
               "suggested_voice_id": "alvaro_es",
               "suggested_background_niche": "minecraft_parkour"}}
 
@@ -378,10 +391,12 @@ niches:
         Fondos disponibles (elige uno): {background_options}
         Tono: analitico, referencias internas, respeto al medio.
         REGLA: hook_text DEBE terminar en "?" o empezar con: Sabias/Nunca/Cual/Como/Cuando/Por que/Donde/Quien/Esto/En/Nadie/Habia
+        REGLA: body_lines DEBE tener entre 6 y 8 oraciones, NUNCA menos de 6
+        REGLA: total_duration_estimate_s OBJETIVO 52-58 segundos, NUNCA menos de 50
         Sin tildes. Output SOLO JSON valido.
         Formato:
         {{"hook_text": "...",
-          "body_lines": ["...", "...", "...", "..."],
+          "body_lines": ["...", "...", "...", "...", "...", "..."],
           "payoff_text": "...",
           "total_duration_estimate_s": 0,
           "suggested_voice_id": "...",
@@ -397,10 +412,11 @@ niches:
                 "Luego llego E.T. el videojuego. El peor de la historia.",
                 "Atari fabrico 4 millones de copias. Vendio menos de 2.",
                 "En 1984 los padres dejaron de comprar consolas.",
-                "Nintendo la salvo un ano despues desde Japon."
+                "Nintendo la salvo un ano despues desde Japon.",
+                "La recuperacion completa del sector tardo hasta 1987."
               ],
               "payoff_text": "El peor juego de la historia casi mato a toda la industria.",
-              "total_duration_estimate_s": 43,
+              "total_duration_estimate_s": 53,
               "suggested_voice_id": "jorge_mx",
               "suggested_background_niche": "roblox_obby"}}
         - topic: "DOOM 1993"
@@ -411,10 +427,11 @@ niches:
                 "Era shareware: juegas el primero, compras el resto.",
                 "Diez millones de copias en el primer ano.",
                 "Microsoft tuvo que llamarlos para que hicieran una version de Windows.",
-                "Porque DOOM importaba mas que Windows."
+                "Porque DOOM importaba mas que Windows.",
+                "El modelo shareware de DOOM cambio como la industria distribuye software."
               ],
               "payoff_text": "Un juego era mas relevante que el sistema operativo. Piensalo.",
-              "total_duration_estimate_s": 46,
+              "total_duration_estimate_s": 53,
               "suggested_voice_id": "jorge_mx",
               "suggested_background_niche": "minecraft_parkour"}}
         - topic: "SEGA vs Nintendo"
@@ -425,10 +442,11 @@ niches:
                 "Sonic era mas rapido que Mario.",
                 "La publicidad atacaba directamente a Nintendo.",
                 "En 1992 ganaban.",
-                "Pero la Saturn fue un desastre y Sony entro con la PlayStation."
+                "Pero la Saturn fue un desastre y Sony entro con la PlayStation.",
+                "En 2001 SEGA abandono el hardware. Solo hace juegos desde entonces."
               ],
               "payoff_text": "De lideres absolutos a irrelevantes en 3 anos. Por 3 decisiones.",
-              "total_duration_estimate_s": 41,
+              "total_duration_estimate_s": 53,
               "suggested_voice_id": "jorge_mx",
               "suggested_background_niche": "subway_surfers"}}
 
@@ -483,10 +501,12 @@ niches:
         Fondos disponibles (elige uno): {background_options}
         Tono: descubrimiento, humor seco, precision tecnica.
         REGLA: hook_text DEBE terminar en "?" o empezar con: Sabias/Nunca/Cual/Como/Cuando/Por que/Donde/Quien/Esto/En/Nadie/Habia
+        REGLA: body_lines DEBE tener entre 6 y 8 oraciones, NUNCA menos de 6
+        REGLA: total_duration_estimate_s OBJETIVO 52-58 segundos, NUNCA menos de 50
         Nunca afirmes algo no documentado como hecho. Sin tildes. Output SOLO JSON valido.
         Formato:
         {{"hook_text": "...",
-          "body_lines": ["...", "...", "...", "..."],
+          "body_lines": ["...", "...", "...", "...", "...", "..."],
           "payoff_text": "...",
           "total_duration_estimate_s": 0,
           "suggested_voice_id": "...",
@@ -502,10 +522,11 @@ niches:
                 "En 2005 un modder holandés encontro el codigo.",
                 "Hizo el mod Hot Coffee.",
                 "Hillary Clinton lo llevo al Congreso.",
-                "Rockstar retiro el juego. Perdio 24 millones."
+                "Rockstar retiro el juego. Perdio 24 millones.",
+                "La nueva clasificacion M no hundio las ventas. GTA siguio siendo exito."
               ],
               "payoff_text": "Un codigo olvidado causo 24 millones en perdidas. Clasico.",
-              "total_duration_estimate_s": 44,
+              "total_duration_estimate_s": 53,
               "suggested_voice_id": "jorge_mx",
               "suggested_background_niche": "roblox_obby"}}
         - topic: "Zelda dungeon order"
@@ -516,10 +537,11 @@ niches:
                 "Pero el Fire Temple puede completarse antes que el Water Temple.",
                 "Los speedrunners lo descubrieron en 1999.",
                 "Cambia como obtienes el escudo de hierro.",
-                "Nintendo nunca lo documento. Nunca lo confirmo."
+                "Nintendo nunca lo documento. Nunca lo confirmo.",
+                "El orden alternativo cambia el equipo disponible en combate. No es trivial."
               ],
               "payoff_text": "20 anos despues, nadie oficial lo ha confirmado. Sigue activo.",
-              "total_duration_estimate_s": 38,
+              "total_duration_estimate_s": 52,
               "suggested_voice_id": "jorge_mx",
               "suggested_background_niche": "minecraft_parkour"}}
         - topic: "Herobrine Minecraft"
@@ -530,9 +552,10 @@ niches:
                 "Era falsa.",
                 "Pero Notch empezo a poner removed Herobrine en cada update.",
                 "Durante 10 anos. Como broma.",
-                "La leyenda se volvio parte del juego."
+                "La leyenda se volvio parte del juego.",
+                "La ultima entrada removed Herobrine fue en agosto de 2020."
               ],
               "payoff_text": "Mojang creo una leyenda falsa a proposito. Y funciono.",
-              "total_duration_estimate_s": 40,
+              "total_duration_estimate_s": 53,
               "suggested_voice_id": "jorge_mx",
               "suggested_background_niche": "minecraft_parkour"}}
