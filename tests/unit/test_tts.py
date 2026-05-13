@@ -262,3 +262,90 @@ class TestPiperClient:
             result = _ensure_model(model_name)
         assert result == tmp_path / f"{model_name}.onnx"
         assert (tmp_path / f"{model_name}.onnx").read_bytes() == b"fake_data"
+
+
+_PASS1_STDERR = """\
+[Parsed_loudnorm_0 @ 0x...] {
+    "input_i" : "-23.45",
+    "input_tp" : "-3.12",
+    "input_lra" : "8.30",
+    "input_thresh" : "-33.50",
+    "output_i" : "-16.00",
+    "output_tp" : "-1.50",
+    "output_lra" : "8.30",
+    "output_thresh" : "-26.10",
+    "normalization_type" : "dynamic",
+    "target_offset" : "0.45"
+}
+"""
+
+_PASS2_STDERR = """\
+[Parsed_loudnorm_0 @ 0x...]
+Input Integrated:    -23.5 LUFS
+Output Integrated:   -16.0 LUFS
+Input True Peak:      -3.1 dBTP
+Output True Peak:     -1.5 dBTP
+"""
+
+
+class TestNormalizer:
+    def test_loudnorm_returns_lufs(self, tmp_path: Path) -> None:
+        from alvaro.tts.normalizer import loudnorm
+
+        inp = tmp_path / "in.mp3"
+        inp.touch()
+        out = tmp_path / "out.mp3"
+        with patch(
+            "alvaro.tts.normalizer._run_ffmpeg",
+            side_effect=[_PASS1_STDERR, _PASS2_STDERR],
+        ):
+            result = loudnorm(inp, out)
+        assert result == pytest.approx(-16.0)
+
+    def test_loudnorm_calls_ffmpeg_twice(self, tmp_path: Path) -> None:
+        from alvaro.tts.normalizer import loudnorm
+
+        inp = tmp_path / "in.mp3"
+        inp.touch()
+        out = tmp_path / "out.mp3"
+        with patch(
+            "alvaro.tts.normalizer._run_ffmpeg",
+            side_effect=[_PASS1_STDERR, _PASS2_STDERR],
+        ) as mock_ffmpeg:
+            loudnorm(inp, out)
+        assert mock_ffmpeg.call_count == 2
+
+    def test_pass2_args_include_48khz(self, tmp_path: Path) -> None:
+        from alvaro.tts.normalizer import loudnorm
+
+        inp = tmp_path / "in.mp3"
+        inp.touch()
+        out = tmp_path / "out.mp3"
+        with patch(
+            "alvaro.tts.normalizer._run_ffmpeg",
+            side_effect=[_PASS1_STDERR, _PASS2_STDERR],
+        ) as mock_ffmpeg:
+            loudnorm(inp, out)
+        pass2_args = mock_ffmpeg.call_args_list[1][0][0]
+        assert "48000" in pass2_args
+
+    def test_malformed_pass1_raises(self, tmp_path: Path) -> None:
+        from alvaro.tts.normalizer import loudnorm
+
+        inp = tmp_path / "in.mp3"
+        inp.touch()
+        with patch("alvaro.tts.normalizer._run_ffmpeg", return_value="no json here"):
+            with pytest.raises(TTSError, match="pass 1"):
+                loudnorm(inp, tmp_path / "out.mp3")
+
+    def test_malformed_pass2_raises(self, tmp_path: Path) -> None:
+        from alvaro.tts.normalizer import loudnorm
+
+        inp = tmp_path / "in.mp3"
+        inp.touch()
+        with patch(
+            "alvaro.tts.normalizer._run_ffmpeg",
+            side_effect=[_PASS1_STDERR, "no LUFS line here"],
+        ):
+            with pytest.raises(TTSError, match="pass 2"):
+                loudnorm(inp, tmp_path / "out.mp3")
