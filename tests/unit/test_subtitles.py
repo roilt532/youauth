@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import replace
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -59,3 +60,73 @@ class TestSubtitleError:
         err = SubtitleError("fail")
         assert isinstance(err, Exception)
         assert "fail" in str(err)
+
+
+def _make_whisper_word(word: str = " hola", start: float = 0.1, end: float = 0.5) -> MagicMock:
+    w = MagicMock()
+    w.word = word
+    w.start = start
+    w.end = end
+    w.probability = 0.9
+    return w
+
+
+def _make_segment(words: list[MagicMock]) -> MagicMock:
+    seg = MagicMock()
+    seg.words = words
+    return seg
+
+
+class TestTranscriber:
+    async def test_returns_word_timings(self, tmp_path: Path) -> None:
+        from alvaro.subtitles.transcriber import transcribe
+
+        audio = tmp_path / "audio.mp3"
+        audio.touch()
+        seg = _make_segment([_make_whisper_word(" hola", 0.1, 0.5)])
+        mock_model = MagicMock()
+        mock_model.transcribe.return_value = (iter([seg]), MagicMock())
+        with patch("alvaro.subtitles.transcriber._get_model", return_value=mock_model):
+            words = await transcribe(audio, "es")
+        assert len(words) == 1
+        assert words[0].text == "hola"
+        assert words[0].start_s == pytest.approx(0.1)
+        assert words[0].end_s == pytest.approx(0.5)
+        assert words[0].is_keyword is False
+
+    async def test_forces_language_arg(self, tmp_path: Path) -> None:
+        from alvaro.subtitles.transcriber import transcribe
+
+        audio = tmp_path / "audio.mp3"
+        audio.touch()
+        mock_model = MagicMock()
+        mock_model.transcribe.return_value = (iter([]), MagicMock())
+        with patch("alvaro.subtitles.transcriber._get_model", return_value=mock_model):
+            await transcribe(audio, "en")
+        call_kwargs = mock_model.transcribe.call_args[1]
+        assert call_kwargs["language"] == "en"
+
+    async def test_word_timestamps_and_vad_enabled(self, tmp_path: Path) -> None:
+        from alvaro.subtitles.transcriber import transcribe
+
+        audio = tmp_path / "audio.mp3"
+        audio.touch()
+        mock_model = MagicMock()
+        mock_model.transcribe.return_value = (iter([]), MagicMock())
+        with patch("alvaro.subtitles.transcriber._get_model", return_value=mock_model):
+            await transcribe(audio, "es")
+        call_kwargs = mock_model.transcribe.call_args[1]
+        assert call_kwargs["word_timestamps"] is True
+        assert call_kwargs["vad_filter"] is True
+
+    async def test_strips_leading_space_from_word(self, tmp_path: Path) -> None:
+        from alvaro.subtitles.transcriber import transcribe
+
+        audio = tmp_path / "audio.mp3"
+        audio.touch()
+        seg = _make_segment([_make_whisper_word(" mundo", 0.0, 0.3)])
+        mock_model = MagicMock()
+        mock_model.transcribe.return_value = (iter([seg]), MagicMock())
+        with patch("alvaro.subtitles.transcriber._get_model", return_value=mock_model):
+            words = await transcribe(audio, "es")
+        assert words[0].text == "mundo"
