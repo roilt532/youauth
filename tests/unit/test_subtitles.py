@@ -215,3 +215,94 @@ class TestStyler:
         words = [_word("FOTOSINTESIS")]
         result = apply_keywords(words, script, "es")
         assert result[0].is_keyword is True
+
+
+class TestAssRenderer:
+    def test_header_sections_present(self, tmp_path: Path) -> None:
+        from alvaro.subtitles.ass_renderer import render_ass
+
+        out = tmp_path / "subs.ass"
+        render_ass([], out, font="Arial Black")
+        content = out.read_text()
+        assert "[Script Info]" in content
+        assert "[V4+ Styles]" in content
+        assert "[Events]" in content
+
+    def test_keyword_uses_keyword_style(self, tmp_path: Path) -> None:
+        from alvaro.subtitles.ass_renderer import render_ass
+
+        out = tmp_path / "subs.ass"
+        words = [_word("cielo", 0.0, 0.5, kw=True)]
+        render_ass(words, out, font="Arial Black")
+        content = out.read_text()
+        assert "Keyword,,0,0,0" in content
+
+    def test_non_keyword_uses_default_style(self, tmp_path: Path) -> None:
+        from alvaro.subtitles.ass_renderer import render_ass
+
+        out = tmp_path / "subs.ass"
+        words = [_word("de", 0.0, 0.5, kw=False)]
+        render_ass(words, out, font="Arial Black")
+        content = out.read_text()
+        assert "Default,,0,0,0" in content
+
+    def test_animation_tags_present(self, tmp_path: Path) -> None:
+        from alvaro.subtitles.ass_renderer import render_ass
+
+        out = tmp_path / "subs.ass"
+        words = [_word("test", 1.0, 1.5)]
+        render_ass(words, out, font="Arial Black")
+        content = out.read_text()
+        assert r"\fscx80" in content
+        assert r"\t(0,80," in content
+        assert r"\t(80,120," in content
+
+    def test_time_format_centiseconds(self) -> None:
+        from alvaro.subtitles.ass_renderer import _fmt_time
+
+        assert _fmt_time(61.5) == "0:01:01.50"
+        assert _fmt_time(0.0) == "0:00:00.00"
+        assert _fmt_time(3661.0) == "1:01:01.00"
+
+    def test_font_detect_inter_black_present(self) -> None:
+        from alvaro.subtitles.ass_renderer import _detect_font
+
+        mock_result = MagicMock()
+        mock_result.stdout = b"/usr/share/fonts/Inter-Black.ttf: Inter Black:style=Black\n"
+        with patch("alvaro.subtitles.ass_renderer.subprocess.run", return_value=mock_result):
+            font = _detect_font()
+        assert font == "Inter Black"
+
+    def test_font_detect_falls_back_to_arial_black(self) -> None:
+        from alvaro.subtitles.ass_renderer import _detect_font
+
+        mock_result = MagicMock()
+        mock_result.stdout = b"/usr/share/fonts/DejaVuSans.ttf: DejaVu Sans\n"
+        with patch("alvaro.subtitles.ass_renderer.subprocess.run", return_value=mock_result):
+            font = _detect_font()
+        assert font == "Arial Black"
+
+    def test_font_name_emitted_in_style(self, tmp_path: Path) -> None:
+        from alvaro.subtitles.ass_renderer import render_ass
+
+        out = tmp_path / "subs.ass"
+        render_ass([], out, font="Inter Black")
+        content = out.read_text()
+        assert "Inter Black" in content
+
+    def test_fallback_font_name_emitted_in_style(self, tmp_path: Path) -> None:
+        from alvaro.subtitles.ass_renderer import render_ass
+
+        out = tmp_path / "subs.ass"
+        render_ass([], out, font="Arial Black")
+        content = out.read_text()
+        assert "Arial Black" in content
+
+    def test_detect_font_os_error_returns_fallback(self) -> None:
+        from alvaro.subtitles.ass_renderer import _detect_font
+
+        with patch(  # noqa: E501
+            "alvaro.subtitles.ass_renderer.subprocess.run", side_effect=OSError("no fc-list")
+        ):
+            font = _detect_font()
+        assert font == "Arial Black"
