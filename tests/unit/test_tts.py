@@ -1,12 +1,16 @@
 from __future__ import annotations
 
+import subprocess
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 
 from alvaro.config.loader import FallbackVoiceConfig, VoiceConfig, VoicesConfig
 from alvaro.scripting.models import Script
 from alvaro.tts._types import AudioMetadata, TTSError, TTSNetworkError
 from alvaro.tts.edge_client import EdgeTTSClient
+from alvaro.tts.piper_client import PiperClient
 from alvaro.tts.ssml import build_ssml
 
 
@@ -163,7 +167,6 @@ class TestEdgeTTSClient:
     async def test_unknown_voice_id_raises(self, tmp_path: Path) -> None:
         voices = _make_voices()
         client = EdgeTTSClient(voices)
-        import pytest
         with pytest.raises(ValueError, match="not found"):
             await client.synthesize("text", "unknown_voice", tmp_path / "out.mp3")
 
@@ -173,7 +176,89 @@ class TestEdgeTTSClient:
         output = tmp_path / "out.mp3"
         mock_communicate = MagicMock()
         mock_communicate.save = AsyncMock(side_effect=OSError("connection reset"))
-        import pytest
         with patch("alvaro.tts.edge_client.edge_tts.Communicate", return_value=mock_communicate):
             with pytest.raises(TTSNetworkError):
                 await client.synthesize("text", "alvaro_es", output)
+
+
+class TestPiperClient:
+    async def test_synthesize_calls_piper_subprocess(self, tmp_path: Path) -> None:
+        voices = _make_voices()
+        client = PiperClient(voices)
+        output = tmp_path / "out.wav"
+        mock_proc = MagicMock()
+        mock_proc.returncode = 0
+        onnx = tmp_path / "model.onnx"
+        onnx.touch()
+        json_cfg = tmp_path / "model.onnx.json"
+        json_cfg.touch()
+        with (
+            patch("alvaro.tts.piper_client._ensure_model", return_value=onnx),
+            patch("alvaro.tts.piper_client.subprocess.run", return_value=mock_proc) as mock_run,  # noqa: E501
+        ):
+            result = await client.synthesize("hola", "alvaro_es", output)
+        assert result == output
+        mock_run.assert_called_once()
+        call_args = mock_run.call_args
+        assert "piper" in call_args[0][0]
+
+    async def test_nonzero_exit_raises_tts_error(self, tmp_path: Path) -> None:
+        voices = _make_voices()
+        client = PiperClient(voices)
+        output = tmp_path / "out.wav"
+        mock_proc = MagicMock()
+        mock_proc.returncode = 1
+        mock_proc.stderr = b"model error"
+        onnx = tmp_path / "model.onnx"
+        with (
+            patch("alvaro.tts.piper_client._ensure_model", return_value=onnx),
+            patch("alvaro.tts.piper_client.subprocess.run", return_value=mock_proc),
+        ):
+            with pytest.raises(TTSError, match="piper exited"):
+                await client.synthesize("hola", "alvaro_es", output)
+
+    async def test_subprocess_timeout_raises_network_error(self, tmp_path: Path) -> None:
+        voices = _make_voices()
+        client = PiperClient(voices)
+        output = tmp_path / "out.wav"
+        onnx = tmp_path / "model.onnx"
+        with (
+            patch("alvaro.tts.piper_client._ensure_model", return_value=onnx),
+            patch(
+                "alvaro.tts.piper_client.subprocess.run",
+                side_effect=subprocess.TimeoutExpired("piper", 120),
+            ),
+        ):
+            with pytest.raises(TTSNetworkError):
+                await client.synthesize("hola", "alvaro_es", output)
+
+    def test_ensure_model_skips_download_if_exists(self, tmp_path: Path) -> None:
+        from alvaro.tts.piper_client import _ensure_model
+
+        model_name = "es_ES-davefx-medium"
+        onnx = tmp_path / f"{model_name}.onnx"
+        json_cfg = tmp_path / f"{model_name}.onnx.json"
+        onnx.touch()
+        json_cfg.touch()
+        with patch("alvaro.tts.piper_client._models_dir", return_value=tmp_path):
+            result = _ensure_model(model_name)
+        assert result == onnx
+
+    def test_ensure_model_downloads_if_missing(self, tmp_path: Path) -> None:
+        from alvaro.tts.piper_client import _ensure_model
+
+        model_name = "es_ES-davefx-medium"
+        mock_resp = MagicMock()
+        mock_resp.content = b"fake_data"
+        mock_resp.raise_for_status = MagicMock()
+        mock_http = MagicMock()
+        mock_http.__enter__ = MagicMock(return_value=mock_http)
+        mock_http.__exit__ = MagicMock(return_value=False)
+        mock_http.get = MagicMock(return_value=mock_resp)
+        with (
+            patch("alvaro.tts.piper_client._models_dir", return_value=tmp_path),
+            patch("alvaro.tts.piper_client.httpx.Client", return_value=mock_http),
+        ):
+            result = _ensure_model(model_name)
+        assert result == tmp_path / f"{model_name}.onnx"
+        assert (tmp_path / f"{model_name}.onnx").read_bytes() == b"fake_data"
