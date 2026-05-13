@@ -3,7 +3,10 @@ from __future__ import annotations
 from alvaro.scripting.models import _VALID_BACKGROUNDS, Script, ValidationResult
 
 _ES_TRIGGERS: frozenset[str] = frozenset(
-    ["sabias", "nunca", "esto", "por", "que", "cual", "como", "cuando", "donde", "quien"]
+    [
+        "sabias", "nunca", "esto", "por", "que", "cual", "como", "cuando", "donde", "quien",
+        "en", "nadie", "habia",
+    ]
 )
 _EN_TRIGGERS: frozenset[str] = frozenset(
     ["did", "you", "what", "how", "why", "when", "where", "who", "can", "is"]

@@ -57,7 +57,7 @@ niches:
         Voces disponibles para este nicho (elige una): {voice_catalog}
         Fondos disponibles (elige uno segun el tono): {background_options}
         Estructura obligatoria:
-          - hook_text: primera oracion del video (max 20 palabras, engancha en 3 segundos)
+          - hook_text: OBLIGATORIO: termina en "?" o empieza con Sabias/Nunca/Cual/Como/Cuando/Por que/Donde/Quien/Esto/En/Nadie/Habia (max 20 palabras)
           - body_lines: lista de 4 a 6 oraciones cortas del desarrollo, cada una max 15 palabras
           - payoff_text: cierre tipo cliffhanger o llamada a reflexion (segundos 50-58, max 20 palabras)
           - total_duration_estimate_s: estimado total en segundos (debe ser <= {max_duration_s})
@@ -167,6 +167,7 @@ niches:
         Voces disponibles (elige una): {voice_catalog}
         Fondos disponibles (elige uno): {background_options}
         Tono: narrativo, tension dramatica, rigor historico.
+        REGLA: hook_text DEBE terminar en "?" o empezar con: Sabias/Nunca/Cual/Como/Cuando/Por que/Donde/Quien/Esto/En/Nadie/Habia
         Sin tildes. Output SOLO JSON valido.
         Formato:
         {{"hook_text": "...",
@@ -180,7 +181,7 @@ niches:
       few_shots:
         - topic: "Hiroo Onoda"
           output: |
-            {{"hook_text": "Hiroo Onoda siguio luchando hasta 1974. La guerra termino en 1945.",
+            {{"hook_text": "Sabias que un soldado japones siguio en guerra hasta 1974? La habia terminado en 1945.",
               "body_lines": [
                 "En 1945 Japon se rindio.",
                 "Onoda no lo supo. Nadie llego a su jungla filipina.",
@@ -271,6 +272,7 @@ niches:
         Voces disponibles (elige una): {voice_catalog}
         Fondos disponibles (elige uno): {background_options}
         Tono: divulgativo, no sensacionalista, final abierto.
+        REGLA: hook_text DEBE terminar en "?" o empezar con: Sabias/Nunca/Cual/Como/Cuando/Por que/Donde/Quien/Esto/En/Nadie/Habia
         No afirmes causas sobrenaturales. Sin tildes. Output SOLO JSON valido.
         Formato:
         {{"hook_text": "...",
@@ -312,7 +314,7 @@ niches:
               "suggested_background_niche": "subway_surfers"}}
         - topic: "lluvia de peces"
           output: |
-            {{"hook_text": "Yoro, Honduras. Cada mayo llueven peces. Esto pasa desde 1800.",
+            {{"hook_text": "En Yoro, Honduras, llueven peces cada mayo. Documentado desde 1800.",
               "body_lines": [
                 "No es una leyenda. Hay fotos y testimonios de decenas de anos.",
                 "Teoria uno: tornados submarinos los suben al cielo.",
@@ -375,6 +377,7 @@ niches:
         Voces disponibles (elige una): {voice_catalog}
         Fondos disponibles (elige uno): {background_options}
         Tono: analitico, referencias internas, respeto al medio.
+        REGLA: hook_text DEBE terminar en "?" o empezar con: Sabias/Nunca/Cual/Como/Cuando/Por que/Donde/Quien/Esto/En/Nadie/Habia
         Sin tildes. Output SOLO JSON valido.
         Formato:
         {{"hook_text": "...",
@@ -416,7 +419,7 @@ niches:
               "suggested_background_niche": "minecraft_parkour"}}
         - topic: "SEGA vs Nintendo"
           output: |
-            {{"hook_text": "SEGA tuvo el 65 por ciento del mercado en 1992. Como lo perdio todo.",
+            {{"hook_text": "Como SEGA perdio el 65 por ciento del mercado en solo tres anos.",
               "body_lines": [
                 "SEGA lanzo el Genesis antes que Nintendo.",
                 "Sonic era mas rapido que Mario.",
@@ -479,6 +482,7 @@ niches:
         Voces disponibles (elige una): {voice_catalog}
         Fondos disponibles (elige uno): {background_options}
         Tono: descubrimiento, humor seco, precision tecnica.
+        REGLA: hook_text DEBE terminar en "?" o empezar con: Sabias/Nunca/Cual/Como/Cuando/Por que/Donde/Quien/Esto/En/Nadie/Habia
         Nunca afirmes algo no documentado como hecho. Sin tildes. Output SOLO JSON valido.
         Formato:
         {{"hook_text": "...",
@@ -506,7 +510,7 @@ niches:
               "suggested_background_niche": "roblox_obby"}}
         - topic: "Zelda dungeon order"
           output: |
-            {{"hook_text": "Ocarina of Time tiene un orden de templos alternativo que Nintendo ignoro.",
+            {{"hook_text": "En Ocarina of Time hay un orden de templos alternativo que Nintendo nunca documento.",
               "body_lines": [
                 "El juego esta disenado para un orden especifico.",
                 "Pero el Fire Temple puede completarse antes que el Water Temple.",
@@ -520,7 +524,7 @@ niches:
               "suggested_background_niche": "minecraft_parkour"}}
         - topic: "Herobrine Minecraft"
           output: |
-            {{"hook_text": "Herobrine nunca existio en Minecraft. Pero Notch lo puso en los changelogs.",
+            {{"hook_text": "Nunca existio Herobrine en Minecraft. Pero Notch lo puso igual en los changelogs.",
               "body_lines": [
                 "En 2010 aparecio una historia de un Steve sin ojos.",
                 "Era falsa.",
