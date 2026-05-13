@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-import subprocess
 import tempfile
 from pathlib import Path
 
 from loguru import logger
 
+from alvaro._ffmpeg import probe_duration
 from alvaro.config.loader import VoicesConfig
 from alvaro.scripting.models import Script
 from alvaro.tts._types import AudioMetadata, TTSNetworkError
@@ -17,20 +17,7 @@ from alvaro.tts.ssml import build_ssml
 _LUFS_TARGET = -16.0
 _DURATION_TOLERANCE_S = 3
 
-
-def _probe_duration(path: Path) -> float:
-    result = subprocess.run(  # noqa: S603
-        [  # noqa: S607
-            "ffprobe", "-v", "error",
-            "-show_entries", "format=duration",
-            "-of", "default=noprint_wrappers=1:nokey=1",
-            str(path),
-        ],
-        capture_output=True,
-        check=False,
-        timeout=30,
-    )
-    return float(result.stdout.decode().strip())
+_probe_duration = probe_duration
 
 
 def _resolve_voice_params(voices: VoicesConfig, voice_id: str) -> tuple[str, str]:
