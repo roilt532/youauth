@@ -349,3 +349,69 @@ class TestNormalizer:
         ):
             with pytest.raises(TTSError, match="pass 2"):
                 loudnorm(inp, tmp_path / "out.mp3")
+
+
+class TestSynthesizer:
+    async def test_synthesize_script_returns_metadata(self, tmp_path: Path) -> None:
+        from alvaro.tts.synthesizer import synthesize_script
+
+        script = _make_script()
+        voices = _make_voices()
+        output = tmp_path / "out.mp3"
+        with (
+            patch("alvaro.tts.synthesizer.EdgeTTSClient") as mock_edge_cls,
+            patch("alvaro.tts.synthesizer.loudnorm", return_value=-16.0),
+            patch("alvaro.tts.synthesizer._probe_duration", return_value=52.5),
+            patch("alvaro.tts.synthesizer.Path.unlink"),
+        ):
+            mock_edge = AsyncMock()
+            mock_edge_cls.return_value = mock_edge
+            result = await synthesize_script(script, "alvaro_es", voices, output)
+        assert isinstance(result, AudioMetadata)
+        assert result.lufs_integrated == pytest.approx(-16.0)
+        assert result.duration_s == pytest.approx(52.5)
+        assert result.sample_rate == 48000
+        assert result.channels == 1
+        assert result.format == "mp3"
+
+    async def test_falls_back_to_piper_on_network_error(self, tmp_path: Path) -> None:
+        from alvaro.tts.synthesizer import synthesize_script
+
+        script = _make_script()
+        voices = _make_voices()
+        output = tmp_path / "out.mp3"
+        with (
+            patch("alvaro.tts.synthesizer.EdgeTTSClient") as mock_edge_cls,
+            patch("alvaro.tts.synthesizer.PiperClient") as mock_piper_cls,
+            patch("alvaro.tts.synthesizer.loudnorm", return_value=-16.0),
+            patch("alvaro.tts.synthesizer._probe_duration", return_value=50.0),
+            patch("alvaro.tts.synthesizer.Path.unlink"),
+        ):
+            mock_edge = AsyncMock()
+            mock_edge.synthesize.side_effect = TTSNetworkError("timeout")
+            mock_edge_cls.return_value = mock_edge
+            mock_piper = AsyncMock()
+            mock_piper_cls.return_value = mock_piper
+            result = await synthesize_script(script, "alvaro_es", voices, output)
+        mock_piper.synthesize.assert_called_once()
+        assert result.duration_s == pytest.approx(50.0)
+
+    async def test_ssml_passed_to_edge_client(self, tmp_path: Path) -> None:
+        from alvaro.tts.synthesizer import synthesize_script
+
+        script = _make_script()
+        voices = _make_voices()
+        output = tmp_path / "out.mp3"
+        with (
+            patch("alvaro.tts.synthesizer.EdgeTTSClient") as mock_edge_cls,
+            patch("alvaro.tts.synthesizer.loudnorm", return_value=-16.0),
+            patch("alvaro.tts.synthesizer._probe_duration", return_value=52.0),
+            patch("alvaro.tts.synthesizer.Path.unlink"),
+        ):
+            mock_edge = AsyncMock()
+            mock_edge_cls.return_value = mock_edge
+            await synthesize_script(script, "alvaro_es", voices, output)
+        call_args = mock_edge.synthesize.call_args
+        text_arg = call_args[0][0]
+        assert text_arg.startswith("<speak>")
+        assert script.hook_text in text_arg
