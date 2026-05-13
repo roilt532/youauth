@@ -306,3 +306,76 @@ class TestAssRenderer:
         ):
             font = _detect_font()
         assert font == "Arial Black"
+
+
+class TestBuilder:
+    async def test_returns_subtitle_track(self, tmp_path: Path) -> None:
+        from alvaro.subtitles.builder import build_subtitles
+
+        audio = tmp_path / "audio.mp3"
+        audio.touch()
+        script = _make_script()
+        out = tmp_path / "subs.ass"
+        words = [_word("cielo", 0.0, 0.5, kw=True), _word("azul", 0.6, 1.1)]
+        with (
+            patch("alvaro.subtitles.builder.transcribe", return_value=words),
+            patch("alvaro.subtitles.builder.apply_keywords", return_value=words),
+            patch("alvaro.subtitles.builder.render_ass"),
+            patch("alvaro.subtitles.builder.probe_duration", return_value=1.1),
+            patch("alvaro.subtitles.builder._resolve_language", return_value="es"),
+        ):
+            track = await build_subtitles(audio, script, out)
+        assert isinstance(track, SubtitleTrack)
+        assert track.keyword_count == 1
+        assert track.total_duration_s == pytest.approx(1.1)
+        assert track.ass_file_path == out
+
+    async def test_wordcount_warning_logged(  # noqa: E501
+        self, tmp_path: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        from alvaro.subtitles.builder import build_subtitles
+
+        audio = tmp_path / "audio.mp3"
+        audio.touch()
+        script = _make_script(
+            hook="estos son exactamente diez palabras distintas aqui mismo ahora bien",
+            body=[], payoff="",
+        )
+        short_words = [_word("hola", 0.0, 0.5)]
+        with (
+            patch("alvaro.subtitles.builder.transcribe", return_value=short_words),
+            patch("alvaro.subtitles.builder.apply_keywords", return_value=short_words),
+            patch("alvaro.subtitles.builder.render_ass"),
+            patch("alvaro.subtitles.builder.probe_duration", return_value=0.5),
+            patch("alvaro.subtitles.builder._resolve_language", return_value="es"),
+        ):
+            import logging
+            with caplog.at_level(logging.WARNING):
+                await build_subtitles(audio, script, tmp_path / "subs.ass")
+
+    async def test_resolves_language_from_voice(self, tmp_path: Path) -> None:
+        from alvaro.config.loader import FallbackVoiceConfig, VoiceConfig, VoicesConfig
+        from alvaro.subtitles.builder import _resolve_language
+        mock_voices = VoicesConfig(
+            voices=[VoiceConfig(
+                id="alvaro_es", engine="edge-tts", voice="es-ES-AlvaroNeural",
+                language="es-ES", rate="+5%", pitch="+0Hz", niches=["science"],
+            )],
+            fallback=FallbackVoiceConfig(engine="piper", model="x", binary="piper", niches=["*"]),
+            niche_voice_map={},
+        )
+        with patch("alvaro.subtitles.builder.load_voices", return_value=mock_voices):
+            lang = _resolve_language("alvaro_es")
+        assert lang == "es"
+
+    async def test_unknown_voice_defaults_es(self, tmp_path: Path) -> None:
+        from alvaro.config.loader import FallbackVoiceConfig, VoicesConfig
+        from alvaro.subtitles.builder import _resolve_language
+        mock_voices = VoicesConfig(
+            voices=[],
+            fallback=FallbackVoiceConfig(engine="piper", model="x", binary="piper", niches=["*"]),
+            niche_voice_map={},
+        )
+        with patch("alvaro.subtitles.builder.load_voices", return_value=mock_voices):
+            lang = _resolve_language("unknown_voice")
+        assert lang == "es"
