@@ -1,10 +1,32 @@
 from __future__ import annotations
 
 from pathlib import Path
+from unittest.mock import AsyncMock, MagicMock, patch
 
+from alvaro.config.loader import FallbackVoiceConfig, VoiceConfig, VoicesConfig
 from alvaro.scripting.models import Script
 from alvaro.tts._types import AudioMetadata, TTSError, TTSNetworkError
+from alvaro.tts.edge_client import EdgeTTSClient
 from alvaro.tts.ssml import build_ssml
+
+
+def _make_voices(
+    voice_id: str = "alvaro_es",
+    voice_name: str = "es-ES-AlvaroNeural",
+    rate: str = "+5%",
+    pitch: str = "+0Hz",
+) -> VoicesConfig:
+    vc = VoiceConfig(
+        id=voice_id,
+        engine="edge-tts",
+        voice=voice_name,
+        language="es-ES",
+        rate=rate,
+        pitch=pitch,
+        niches=["science"],
+    )
+    fb = FallbackVoiceConfig(engine="piper", model="es_ES", binary="piper", niches=["*"])
+    return VoicesConfig(voices=[vc], fallback=fb, niche_voice_map={"science": [voice_id]})
 
 
 def _make_script(
@@ -98,3 +120,60 @@ class TestTTSErrors:
     def test_tts_error_message(self) -> None:
         err = TTSError("synthesis failed")
         assert "synthesis failed" in str(err)
+
+
+class TestEdgeTTSClient:
+    async def test_synthesize_calls_communicate_save(self, tmp_path: Path) -> None:
+        voices = _make_voices()
+        client = EdgeTTSClient(voices)
+        output = tmp_path / "out.mp3"
+        mock_communicate = AsyncMock()
+        mock_communicate.save = AsyncMock()
+        with patch("alvaro.tts.edge_client.edge_tts.Communicate", return_value=mock_communicate):
+            result = await client.synthesize("hola mundo", "alvaro_es", output)
+        mock_communicate.save.assert_called_once_with(str(output))
+        assert result == output
+
+    async def test_synthesize_passes_rate_pitch_for_plain_text(self, tmp_path: Path) -> None:
+        voices = _make_voices(rate="+10%", pitch="-2Hz")
+        client = EdgeTTSClient(voices)
+        output = tmp_path / "out.mp3"
+        mock_communicate = AsyncMock()
+        with patch(
+            "alvaro.tts.edge_client.edge_tts.Communicate", return_value=mock_communicate
+        ) as mock_cls:
+            await client.synthesize("plain text", "alvaro_es", output)
+        call_kwargs = mock_cls.call_args[1]
+        assert call_kwargs["rate"] == "+10%"
+        assert call_kwargs["pitch"] == "-2Hz"
+
+    async def test_synthesize_ssml_no_rate_pitch(self, tmp_path: Path) -> None:
+        voices = _make_voices(rate="+10%", pitch="-2Hz")
+        client = EdgeTTSClient(voices)
+        output = tmp_path / "out.mp3"
+        mock_communicate = AsyncMock()
+        with patch(
+            "alvaro.tts.edge_client.edge_tts.Communicate", return_value=mock_communicate
+        ) as mock_cls:
+            await client.synthesize("<speak><prosody>hi</prosody></speak>", "alvaro_es", output)
+        call_kwargs = mock_cls.call_args[1]
+        assert "rate" not in call_kwargs
+        assert "pitch" not in call_kwargs
+
+    async def test_unknown_voice_id_raises(self, tmp_path: Path) -> None:
+        voices = _make_voices()
+        client = EdgeTTSClient(voices)
+        import pytest
+        with pytest.raises(ValueError, match="not found"):
+            await client.synthesize("text", "unknown_voice", tmp_path / "out.mp3")
+
+    async def test_os_error_becomes_network_error(self, tmp_path: Path) -> None:
+        voices = _make_voices()
+        client = EdgeTTSClient(voices)
+        output = tmp_path / "out.mp3"
+        mock_communicate = MagicMock()
+        mock_communicate.save = AsyncMock(side_effect=OSError("connection reset"))
+        import pytest
+        with patch("alvaro.tts.edge_client.edge_tts.Communicate", return_value=mock_communicate):
+            with pytest.raises(TTSNetworkError):
+                await client.synthesize("text", "alvaro_es", output)
