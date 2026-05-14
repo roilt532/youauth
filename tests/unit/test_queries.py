@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import sqlite3
 import time
 from pathlib import Path
 
@@ -119,6 +120,18 @@ class TestUploads:
         await uploads.mark_failed(db, u.id, "quota exceeded")
         result = await db.execute("SELECT status, error FROM uploads WHERE id = ?", [u.id])
         assert result.rows[0][0] == "failed"
+
+    def test_sqlite_enforces_fk_with_pragma_on(self, tmp_path: Path) -> None:
+        conn = sqlite3.connect(str(tmp_path / "fk.db"))
+        conn.execute("PRAGMA foreign_keys = ON")
+        conn.execute("CREATE TABLE videos (id TEXT PRIMARY KEY)")
+        conn.execute(
+            "CREATE TABLE uploads "
+            "(id TEXT PRIMARY KEY, video_id TEXT NOT NULL REFERENCES videos(id))"
+        )
+        with pytest.raises(sqlite3.IntegrityError):
+            conn.execute("INSERT INTO uploads VALUES ('u1', 'nonexistent')")
+        conn.close()
 
 
 class TestAssets:

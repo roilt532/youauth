@@ -18,6 +18,7 @@ class DbClient:
             url=self._url,
             auth_token=self._auth_token,
         )
+        await self._client.execute(libsql_client.Statement("PRAGMA foreign_keys = ON", []))
         logger.debug("db connected host={}", self._url.split("@")[-1].split("?")[0])
 
     async def close(self) -> None:

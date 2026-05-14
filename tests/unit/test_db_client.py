@@ -44,13 +44,21 @@ async def test_context_manager_connects_and_closes(mock_libsql: MagicMock) -> No
     mock_libsql.create_client.return_value.close.assert_awaited_once()
 
 
+async def test_connect_executes_pragma_foreign_keys(
+    client: DbClient, mock_libsql: MagicMock
+) -> None:
+    await client.connect()
+    mock_libsql.Statement.assert_any_call("PRAGMA foreign_keys = ON", [])
+    mock_libsql.create_client.return_value.execute.assert_awaited()
+
+
 async def test_execute_uses_statement(
     client: DbClient, mock_libsql: MagicMock
 ) -> None:
     await client.connect()
     await client.execute("SELECT 1", [42])
-    mock_libsql.Statement.assert_called_with("SELECT 1", [42])
-    mock_libsql.create_client.return_value.execute.assert_awaited_once()
+    mock_libsql.Statement.assert_any_call("SELECT 1", [42])
+    mock_libsql.create_client.return_value.execute.assert_awaited()
 
 
 async def test_close_is_idempotent(client: DbClient, mock_libsql: MagicMock) -> None:
