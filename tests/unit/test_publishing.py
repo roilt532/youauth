@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import datetime
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import ANY, AsyncMock, MagicMock
 
 import pytest
 from pytest_mock import MockerFixture
@@ -211,3 +211,247 @@ class TestYouTubeClient:
         from alvaro.publishing.youtube_client import YouTubeClient
         with pytest.raises(PublishingError, match="OAuth refresh failed"):
             YouTubeClient()
+
+
+class TestPublisher:
+    def _setup(self, mocker: MockerFixture, *, existing: object = None) -> dict[str, MagicMock]:
+        mocker.patch(
+            "alvaro.publishing.publisher.uploads_q.get_by_video_id",
+            new_callable=AsyncMock,
+            return_value=existing,
+        )
+        mock_insert = mocker.patch(
+            "alvaro.publishing.publisher.uploads_q.insert_upload",
+            new_callable=AsyncMock,
+            return_value=MagicMock(id="upload-001"),
+        )
+        mock_uploading = mocker.patch(
+            "alvaro.publishing.publisher.uploads_q.mark_uploading",
+            new_callable=AsyncMock,
+        )
+        mock_done = mocker.patch(
+            "alvaro.publishing.publisher.uploads_q.mark_done",
+            new_callable=AsyncMock,
+        )
+        mock_failed = mocker.patch(
+            "alvaro.publishing.publisher.uploads_q.mark_failed",
+            new_callable=AsyncMock,
+        )
+        mock_reserve = mocker.patch(
+            "alvaro.publishing.publisher.reserve_quota",
+            new_callable=AsyncMock,
+        )
+        mock_record = mocker.patch(
+            "alvaro.publishing.publisher.record_quota_usage",
+            new_callable=AsyncMock,
+        )
+        mock_yt_cls = mocker.patch("alvaro.publishing.publisher.YouTubeClient")
+        mock_yt_cls.return_value.upload = AsyncMock(return_value="dQw4w9WgXcQ")
+        return {
+            "insert": mock_insert,
+            "uploading": mock_uploading,
+            "done": mock_done,
+            "failed": mock_failed,
+            "reserve": mock_reserve,
+            "record": mock_record,
+            "yt_cls": mock_yt_cls,
+        }
+
+    def _r2(self, mocker: MockerFixture) -> MagicMock:
+        r2 = MagicMock()
+        r2.download_asset.return_value = b"video_data"
+        return r2
+
+    async def test_skips_on_status_done(
+        self, mocker: MockerFixture, tmp_path: pytest.TempPathFactory
+    ) -> None:
+        from alvaro.publishing.publisher import publish_video
+        existing = MagicMock()
+        existing.status = "done"
+        existing.youtube_video_id = "dQw4w9WgXcQ"
+        existing.privacy = "private"
+        existing.uploaded_at = 1747000000
+        mocks = self._setup(mocker, existing=existing)
+        mocker.patch("alvaro.publishing.publisher.build_video_metadata", return_value={
+            "snippet": {"title": "T", "description": "D"},
+            "status": {"privacyStatus": "private"},
+        })
+
+        result = await publish_video(
+            job_id="j1", r2_key="videos/j1.mp4", script=_make_script(),
+            r2_client=self._r2(mocker), db=MagicMock(), video_db_id="vid-001",
+        )
+
+        mocks["yt_cls"].assert_not_called()
+        mocks["reserve"].assert_not_awaited()
+        assert result.video_id == "dQw4w9WgXcQ"
+        assert result.quota_units_consumed == 0
+
+    async def test_raises_on_status_uploading(
+        self, mocker: MockerFixture
+    ) -> None:
+        from alvaro.publishing.publisher import publish_video
+        existing = MagicMock()
+        existing.status = "uploading"
+        self._setup(mocker, existing=existing)
+
+        with pytest.raises(PublishingError, match="inconsistent state"):
+            await publish_video(
+                job_id="j1", r2_key="videos/j1.mp4", script=_make_script(),
+                r2_client=self._r2(mocker), db=MagicMock(), video_db_id="vid-001",
+            )
+
+    async def test_proceeds_on_status_failed_uses_existing_id(
+        self, mocker: MockerFixture, tmp_path: pytest.TempPathFactory
+    ) -> None:
+        from alvaro.publishing.publisher import publish_video
+        existing = MagicMock()
+        existing.status = "failed"
+        existing.id = "upload-existing"
+        mocks = self._setup(mocker, existing=existing)
+
+        await publish_video(
+            job_id="j1", r2_key="videos/j1.mp4", script=_make_script(),
+            r2_client=self._r2(mocker), db=MagicMock(), video_db_id="vid-001",
+        )
+
+        mocks["insert"].assert_not_awaited()
+        mocks["uploading"].assert_awaited_once_with(ANY, "upload-existing")
+
+    async def test_proceeds_on_status_pending_uses_existing_id(
+        self, mocker: MockerFixture
+    ) -> None:
+        from alvaro.publishing.publisher import publish_video
+        existing = MagicMock()
+        existing.status = "pending"
+        existing.id = "upload-pending"
+        mocks = self._setup(mocker, existing=existing)
+
+        await publish_video(
+            job_id="j1", r2_key="videos/j1.mp4", script=_make_script(),
+            r2_client=self._r2(mocker), db=MagicMock(), video_db_id="vid-001",
+        )
+
+        mocks["insert"].assert_not_awaited()
+        mocks["uploading"].assert_awaited_once_with(ANY, "upload-pending")
+
+    async def test_downloads_from_r2_before_upload(
+        self, mocker: MockerFixture
+    ) -> None:
+        from alvaro.publishing.publisher import publish_video
+        self._setup(mocker)
+        r2 = self._r2(mocker)
+
+        await publish_video(
+            job_id="j1", r2_key="videos/j1.mp4", script=_make_script(),
+            r2_client=r2, db=MagicMock(), video_db_id="vid-001",
+        )
+
+        r2.download_asset.assert_called_once_with("videos/j1.mp4")
+
+    async def test_records_quota_after_upload(
+        self, mocker: MockerFixture
+    ) -> None:
+        from alvaro.publishing.publisher import publish_video
+        mocks = self._setup(mocker)
+
+        await publish_video(
+            job_id="j1", r2_key="videos/j1.mp4", script=_make_script(),
+            r2_client=self._r2(mocker), db=MagicMock(), video_db_id="vid-001",
+        )
+
+        mocks["record"].assert_awaited_once()
+
+    async def test_raises_quota_exceeded_on_403(
+        self, mocker: MockerFixture
+    ) -> None:
+        from alvaro.publishing.publisher import publish_video
+        mocks = self._setup(mocker)
+        mocks["yt_cls"].return_value.upload = AsyncMock(
+            side_effect=QuotaExceededError("quota")
+        )
+
+        with pytest.raises(QuotaExceededError):
+            await publish_video(
+                job_id="j1", r2_key="videos/j1.mp4", script=_make_script(),
+                r2_client=self._r2(mocker), db=MagicMock(), video_db_id="vid-001",
+            )
+
+    async def test_does_not_create_row_on_quota_exceeded_before_upload(
+        self, mocker: MockerFixture
+    ) -> None:
+        from alvaro.publishing.publisher import publish_video
+        mocks = self._setup(mocker)
+        mocks["reserve"].side_effect = QuotaExceededError("over limit")
+
+        with pytest.raises(QuotaExceededError):
+            await publish_video(
+                job_id="j1", r2_key="videos/j1.mp4", script=_make_script(),
+                r2_client=self._r2(mocker), db=MagicMock(), video_db_id="vid-001",
+            )
+
+        mocks["insert"].assert_not_awaited()
+
+    async def test_marks_row_failed_on_upload_exception(
+        self, mocker: MockerFixture
+    ) -> None:
+        from alvaro.publishing.publisher import publish_video
+        mocks = self._setup(mocker)
+        mocks["yt_cls"].return_value.upload = AsyncMock(
+            side_effect=PublishingError("network")
+        )
+
+        with pytest.raises(PublishingError):
+            await publish_video(
+                job_id="j1", r2_key="videos/j1.mp4", script=_make_script(),
+                r2_client=self._r2(mocker), db=MagicMock(), video_db_id="vid-001",
+            )
+
+        mocks["failed"].assert_awaited_once()
+
+    async def test_cleanup_temp_file_on_success(
+        self, mocker: MockerFixture, tmp_path: pytest.TempPathFactory
+    ) -> None:
+        from alvaro.publishing.publisher import publish_video
+        self._setup(mocker)
+        mock_unlink = mocker.patch("alvaro.publishing.publisher.Path.unlink")
+
+        await publish_video(
+            job_id="j1", r2_key="videos/j1.mp4", script=_make_script(),
+            r2_client=self._r2(mocker), db=MagicMock(), video_db_id="vid-001",
+        )
+
+        mock_unlink.assert_called_once_with(missing_ok=True)
+
+    async def test_cleanup_temp_file_on_failure(
+        self, mocker: MockerFixture
+    ) -> None:
+        from alvaro.publishing.publisher import publish_video
+        mocks = self._setup(mocker)
+        mocks["yt_cls"].return_value.upload = AsyncMock(
+            side_effect=PublishingError("fail")
+        )
+        mock_unlink = mocker.patch("alvaro.publishing.publisher.Path.unlink")
+
+        with pytest.raises(PublishingError):
+            await publish_video(
+                job_id="j1", r2_key="videos/j1.mp4", script=_make_script(),
+                r2_client=self._r2(mocker), db=MagicMock(), video_db_id="vid-001",
+            )
+
+        mock_unlink.assert_called_once_with(missing_ok=True)
+
+    async def test_returns_upload_result_with_video_id(
+        self, mocker: MockerFixture
+    ) -> None:
+        from alvaro.publishing.publisher import publish_video
+        self._setup(mocker)
+
+        result = await publish_video(
+            job_id="j1", r2_key="videos/j1.mp4", script=_make_script(),
+            r2_client=self._r2(mocker), db=MagicMock(), video_db_id="vid-001",
+        )
+
+        assert result.video_id == "dQw4w9WgXcQ"
+        assert result.video_url == "https://youtube.com/shorts/dQw4w9WgXcQ"
+        assert result.quota_units_consumed == 1600

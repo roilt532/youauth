@@ -83,3 +83,8 @@ async def mark_failed(client: DbClient, upload_id: str, error: str) -> None:
 async def get_pending(client: DbClient) -> list[Upload]:
     result = await client.execute(f"{_SEL} WHERE status = 'pending' ORDER BY id ASC")
     return [_row(r) for r in result.rows]
+
+
+async def get_by_video_id(client: DbClient, video_id: str) -> Upload | None:
+    result = await client.execute(f"{_SEL} WHERE video_id = ?", [video_id])
+    return _row(result.rows[0]) if result.rows else None
