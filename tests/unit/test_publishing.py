@@ -184,3 +184,30 @@ class TestMetadataBuilder:
         from alvaro.publishing.metadata_builder import _resolve_language
         lang = _resolve_language("unknown_voice_xyz")
         assert lang == "es"
+
+
+class TestYouTubeClient:
+    def test_builds_credentials_from_env(
+        self, mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setenv("YT_REFRESH_TOKEN", "rt")  # noqa: S106
+        monkeypatch.setenv("YT_CLIENT_ID", "cid")
+        monkeypatch.setenv("YT_CLIENT_SECRET", "cs")  # noqa: S106
+        mocker.patch("alvaro.publishing.youtube_client.build", return_value=MagicMock())
+        from alvaro.publishing.youtube_client import YouTubeClient
+        client = YouTubeClient()
+        assert client._service is not None
+
+    def test_raises_publishing_error_on_refresh_failure(
+        self, mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        import google.auth.exceptions
+        monkeypatch.setenv("YT_REFRESH_TOKEN", "bad")  # noqa: S106
+        monkeypatch.setenv("YT_CLIENT_ID", "cid")
+        monkeypatch.setenv("YT_CLIENT_SECRET", "cs")  # noqa: S106
+        mock_build = mocker.patch("alvaro.publishing.youtube_client.build")
+        mock_build.side_effect = google.auth.exceptions.RefreshError("bad token")
+        from alvaro.publishing._types import PublishingError
+        from alvaro.publishing.youtube_client import YouTubeClient
+        with pytest.raises(PublishingError, match="OAuth refresh failed"):
+            YouTubeClient()
