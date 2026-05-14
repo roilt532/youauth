@@ -7,6 +7,24 @@ import pytest
 from pytest_mock import MockerFixture
 
 from alvaro.publishing._types import PublishingError, QuotaExceededError, UploadResult
+from alvaro.scripting.models import Script
+
+
+def _make_script(**kwargs: object) -> Script:
+    defaults: dict[str, object] = {
+        "hook_text": "Por que el cielo es azul?",
+        "body_lines": [
+            "La luz solar contiene todos los colores del espectro.",
+            "La luz azul se dispersa mas que otros colores.",
+        ],
+        "payoff_text": "Este fenomeno se llama dispersion de Rayleigh.",
+        "total_duration_estimate_s": 35,
+        "suggested_voice_id": "alvaro_es",
+        "suggested_background_niche": "minecraft_parkour",
+        "niche_id": "science",
+    }
+    defaults.update(kwargs)
+    return Script(**defaults)  # type: ignore[arg-type]
 
 
 def _make_result(**kwargs: object) -> UploadResult:
@@ -96,3 +114,73 @@ class TestQuota:
         )
         await record_quota_usage(db, 1600, "yt_abc123")
         mock_add.assert_awaited_once()
+
+
+class TestMetadataBuilder:
+    def _script(self, **kwargs: object) -> Script:
+        return _make_script(**kwargs)
+
+    def test_title_under_100_chars_unchanged(self, mocker: MockerFixture) -> None:
+        from alvaro.publishing.metadata_builder import build_video_metadata
+        mocker.patch(
+            "alvaro.publishing.metadata_builder._resolve_language", return_value="es"
+        )
+        script = self._script(hook_text="Titulo corto")
+        meta = build_video_metadata(script, "science", "private")
+        assert meta["snippet"]["title"] == "Titulo corto"  # type: ignore[index]
+
+    def test_title_truncated_at_word_boundary(self, mocker: MockerFixture) -> None:
+        from alvaro.publishing.metadata_builder import build_video_metadata
+        mocker.patch(
+            "alvaro.publishing.metadata_builder._resolve_language", return_value="es"
+        )
+        long_title = "palabra " * 15
+        script = self._script(hook_text=long_title.strip())
+        meta = build_video_metadata(script, "science", "private")
+        title = str(meta["snippet"]["title"])  # type: ignore[index]
+        assert len(title) <= 100
+        assert title.endswith("...")
+
+    def test_description_includes_hook_body_payoff(self, mocker: MockerFixture) -> None:
+        from alvaro.publishing.metadata_builder import build_video_metadata
+        mocker.patch(
+            "alvaro.publishing.metadata_builder._resolve_language", return_value="es"
+        )
+        script = self._script()
+        meta = build_video_metadata(script, "science", "private")
+        desc = str(meta["snippet"]["description"])  # type: ignore[index]
+        assert script.hook_text in desc
+        assert script.payoff_text in desc
+        assert script.body_lines[0] in desc
+
+    def test_tags_under_500_chars_total(self, mocker: MockerFixture) -> None:
+        from alvaro.publishing.metadata_builder import build_video_metadata
+        mocker.patch(
+            "alvaro.publishing.metadata_builder._resolve_language", return_value="es"
+        )
+        script = self._script()
+        meta = build_video_metadata(script, "science", "private")
+        tags = meta["snippet"]["tags"]  # type: ignore[index]
+        assert isinstance(tags, list)
+        total = sum(len(t) for t in tags)
+        assert total < 500
+
+    def test_sets_synthetic_media_disclosure(self, mocker: MockerFixture) -> None:
+        from alvaro.publishing.metadata_builder import build_video_metadata
+        mocker.patch(
+            "alvaro.publishing.metadata_builder._resolve_language", return_value="es"
+        )
+        script = self._script()
+        meta = build_video_metadata(script, "science", "private")
+        assert meta["status"]["containsSyntheticMedia"] is True  # type: ignore[index]
+        assert meta["status"]["selfDeclaredMadeForKids"] is False  # type: ignore[index]
+
+    def test_default_language_from_voice(self) -> None:
+        from alvaro.publishing.metadata_builder import _resolve_language
+        lang = _resolve_language("alvaro_es")
+        assert lang == "es"
+
+    def test_default_language_fallback_es(self) -> None:
+        from alvaro.publishing.metadata_builder import _resolve_language
+        lang = _resolve_language("unknown_voice_xyz")
+        assert lang == "es"
