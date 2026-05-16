@@ -8,6 +8,7 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 from pytest_mock import MockerFixture
 
+from alvaro.publishing._types import QuotaExceededError
 from alvaro.scripting.models import Script
 
 
@@ -225,3 +226,197 @@ class TestGenerate:
         parsed = json.loads(stored_json)
         assert parsed["hook_text"] == script.hook_text
         assert parsed == dataclasses.asdict(script)
+
+
+def _make_uploadable_video(**kwargs: object) -> MagicMock:
+    vid = MagicMock()
+    vid.id = "vid-001"
+    vid.job_id = "job-001"
+    vid.niche_id = "science"
+    vid.r2_key = "videos/job-001.mp4"
+    vid.script_json = json.dumps(dataclasses.asdict(_make_script()))
+    for k, v in kwargs.items():
+        setattr(vid, k, v)
+    return vid
+
+
+def _up(mocker: MockerFixture, target: str, **kw: object) -> MagicMock:
+    return mocker.patch(f"alvaro.cli.upload.{target}", **kw)  # type: ignore[arg-type]
+
+
+class TestUpload:
+    def _patch_upload(
+        self,
+        mocker: MockerFixture,
+        *,
+        videos: list[MagicMock] | None = None,
+        quota_used: int = 0,
+    ) -> dict[str, MagicMock]:
+        if videos is None:
+            videos = [_make_uploadable_video()]
+
+        db_mock = MagicMock()
+        db_mock.connect = AsyncMock()
+        db_mock.close = AsyncMock()
+
+        mocks: dict[str, MagicMock] = {}
+        mocks["build_db"] = _up(mocker, "build_db_client", return_value=db_mock)
+        mocks["build_r2"] = _up(mocker, "build_r2_client", return_value=MagicMock())
+        mocks["get_uploadable"] = _up(
+            mocker, "videos_q.get_uploadable",
+            new_callable=AsyncMock, return_value=videos,
+        )
+        mocks["get_quota"] = _up(
+            mocker, "get_daily_quota_used",
+            new_callable=AsyncMock, return_value=quota_used,
+        )
+        mocks["publish"] = _up(
+            mocker, "publish_video",
+            new_callable=AsyncMock, return_value=MagicMock(video_id="yt-001"),
+        )
+        mocks["increment_uploads"] = _up(
+            mocker, "niches_q.increment_uploads", new_callable=AsyncMock
+        )
+        return mocks
+
+    async def test_processes_max_videos(self, mocker: MockerFixture) -> None:
+        from alvaro.cli.upload import _run
+
+        vids = [_make_uploadable_video(id=f"v{i}") for i in range(3)]
+        mocks = self._patch_upload(mocker, videos=vids)
+
+        await _run(3)
+
+        assert mocks["publish"].await_count == 3
+
+    async def test_stops_when_quota_cap_reached(self, mocker: MockerFixture) -> None:
+        from alvaro.cli.upload import _run
+
+        vids = [_make_uploadable_video(id=f"v{i}") for i in range(3)]
+        mocks = self._patch_upload(mocker, videos=vids, quota_used=7600)
+
+        await _run(3)
+
+        mocks["publish"].assert_not_awaited()
+
+    async def test_continues_on_individual_failure(self, mocker: MockerFixture) -> None:
+        from alvaro.cli.upload import _run
+
+        vids = [_make_uploadable_video(id=f"v{i}") for i in range(3)]
+        mocks = self._patch_upload(mocker, videos=vids)
+        mocks["publish"].side_effect = [
+            RuntimeError("network"),
+            MagicMock(video_id="yt-002"),
+            MagicMock(video_id="yt-003"),
+        ]
+
+        await _run(3)
+
+        assert mocks["publish"].await_count == 3
+        assert mocks["increment_uploads"].await_count == 2
+
+    async def test_stops_on_quota_exceeded_mid_loop(self, mocker: MockerFixture) -> None:
+        from alvaro.cli.upload import _run
+
+        vids = [_make_uploadable_video(id=f"v{i}") for i in range(3)]
+        mocks = self._patch_upload(mocker, videos=vids)
+        mocks["publish"].side_effect = [
+            QuotaExceededError("quota"),
+            MagicMock(video_id="yt-002"),
+        ]
+
+        await _run(3)
+
+        assert mocks["publish"].await_count == 1
+
+    async def test_skips_video_without_script_json(
+        self, mocker: MockerFixture
+    ) -> None:
+        from alvaro.cli.upload import _run
+
+        vid = _make_uploadable_video(script_json=None)
+        mocks = self._patch_upload(mocker, videos=[vid])
+
+        await _run(1)
+
+        mocks["publish"].assert_not_awaited()
+
+
+def _an(mocker: MockerFixture, target: str, **kw: object) -> MagicMock:
+    return mocker.patch(f"alvaro.cli.analytics.{target}", **kw)  # type: ignore[arg-type]
+
+
+class TestAnalytics:
+    def _make_upload(self, yt_id: str = "yt-abc") -> MagicMock:
+        up = MagicMock()
+        up.youtube_video_id = yt_id
+        return up
+
+    def _patch_analytics(
+        self,
+        mocker: MockerFixture,
+        *,
+        uploads: list[MagicMock] | None = None,
+    ) -> dict[str, MagicMock]:
+        if uploads is None:
+            uploads = [self._make_upload()]
+
+        db_mock = MagicMock()
+        db_mock.connect = AsyncMock()
+        db_mock.close = AsyncMock()
+
+        mocks: dict[str, MagicMock] = {}
+        mocks["build_db"] = _an(mocker, "build_db_client", return_value=db_mock)
+        mocks["get_recent_done"] = _an(
+            mocker, "uploads_q.get_recent_done",
+            new_callable=AsyncMock, return_value=uploads,
+        )
+        yt_mock = MagicMock()
+        yt_mock._service.videos.return_value.list.return_value.execute.return_value = {
+            "items": [{"statistics": {"viewCount": "100", "likeCount": "5", "commentCount": "2"}}]
+        }
+        mocks["yt_cls"] = _an(mocker, "YouTubeClient", return_value=yt_mock)
+        mocks["insert_snapshot"] = _an(
+            mocker, "metrics_q.insert_snapshot", new_callable=AsyncMock
+        )
+        return mocks
+
+    async def test_inserts_metric_snapshot_for_each_upload(
+        self, mocker: MockerFixture
+    ) -> None:
+        from alvaro.cli.analytics import _run
+
+        ups = [self._make_upload("yt-1"), self._make_upload("yt-2")]
+        mocks = self._patch_analytics(mocker, uploads=ups)
+
+        await _run(7)
+
+        assert mocks["insert_snapshot"].await_count == 2
+
+    async def test_skips_when_no_uploads_in_window(
+        self, mocker: MockerFixture
+    ) -> None:
+        from alvaro.cli.analytics import _run
+
+        mocks = self._patch_analytics(mocker, uploads=[])
+
+        await _run(7)
+
+        mocks["insert_snapshot"].assert_not_awaited()
+        mocks["yt_cls"].assert_not_called()
+
+    async def test_continues_on_individual_failure(
+        self, mocker: MockerFixture
+    ) -> None:
+        from alvaro.cli.analytics import _run
+
+        ups = [self._make_upload("yt-1"), self._make_upload("yt-2")]
+        mocks = self._patch_analytics(mocker, uploads=ups)
+        mocks["insert_snapshot"].side_effect = [
+            RuntimeError("db error"),
+            MagicMock(),
+        ]
+
+        await _run(7)
+
+        assert mocks["insert_snapshot"].await_count == 2
