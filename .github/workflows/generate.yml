@@ -1,0 +1,112 @@
+name: Generate Videos
+
+on:
+  schedule:
+    - cron: "0 8 * * *"   # slot morning  (08:00 UTC)
+    - cron: "0 14 * * *"  # slot noon     (14:00 UTC)
+    - cron: "0 20 * * *"  # slot evening  (20:00 UTC)
+  workflow_dispatch:
+    inputs:
+      niche:
+        description: "Niche ID"
+        required: true
+        default: "science"
+        type: choice
+        options:
+          - science
+          - history
+          - mystery
+          - curiosities
+          - gaming_minecraft
+      slot:
+        description: "Time slot"
+        required: true
+        default: "noon"
+        type: choice
+        options:
+          - morning
+          - noon
+          - evening
+
+jobs:
+  generate:
+    name: "generate ${{ matrix.niche }}"
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    strategy:
+      fail-fast: false
+      matrix:
+        niche:
+          - science
+          - history
+          - mystery
+          - curiosities
+          - gaming_minecraft
+
+    concurrency:
+      group: "generate-${{ matrix.niche }}-${{ env.SLOT }}"
+      cancel-in-progress: false
+
+    env:
+      GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
+      YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
+      YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
+      TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+      TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+      R2_ENDPOINT_URL: ${{ secrets.R2_ENDPOINT_URL }}
+      R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      R2_BUCKET: ${{ secrets.R2_BUCKET }}
+      PIPER_MODELS_DIR: /tmp/piper_models
+      WHISPER_MODEL_DIR: /tmp/whisper_models
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Cache Piper models
+        uses: actions/cache@v4
+        with:
+          path: /tmp/piper_models
+          key: piper-models-v1
+
+      - name: Cache Whisper models
+        uses: actions/cache@v4
+        with:
+          path: /tmp/whisper_models
+          key: whisper-models-v1
+
+      - name: Install system dependencies
+        run: bash scripts/setup_workflow_env.sh
+
+      - name: Install Python dependencies
+        run: pip install -e ".[dev,test]"
+
+      - name: Derive slot from cron schedule
+        if: github.event_name == 'schedule'
+        run: |
+          HOUR=$(date -u +%H)
+          case $HOUR in
+            08) echo "SLOT=morning" >> "$GITHUB_ENV" ;;
+            14) echo "SLOT=noon"    >> "$GITHUB_ENV" ;;
+            20) echo "SLOT=evening" >> "$GITHUB_ENV" ;;
+            *)  echo "SLOT=noon"    >> "$GITHUB_ENV" ;;
+          esac
+
+      - name: Set slot from workflow_dispatch input
+        if: github.event_name == 'workflow_dispatch'
+        run: echo "SLOT=${{ inputs.slot }}" >> "$GITHUB_ENV"
+
+      - name: Run generate pipeline
+        run: alvaro generate --niche "${{ matrix.niche }}" --slot "$SLOT"
