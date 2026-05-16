@@ -23,7 +23,9 @@ from google_auth_oauthlib.flow import InstalledAppFlow  # type: ignore[import-un
 
 load_dotenv()
 
-_SCOPES = ["https://www.googleapis.com/auth/youtube.upload"]
+_SCOPES = ["https://www.googleapis.com/auth/youtube.upload",
+    "https://www.googleapis.com/auth/youtube.readonly",
+    "https://www.googleapis.com/auth/youtube"]
 _TOKEN_PATH = Path.home() / ".alvaro_oauth_token.json"
 
 _CLIENT_CONFIG = {
