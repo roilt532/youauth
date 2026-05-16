@@ -18,7 +18,7 @@ async def db(tmp_path: Path) -> DbClient:
 
 async def test_apply_real_migration(db: DbClient) -> None:
     count = await run_migrations(db)
-    assert count == 1
+    assert count >= 1
 
 
 async def test_idempotent(db: DbClient) -> None:
@@ -28,9 +28,9 @@ async def test_idempotent(db: DbClient) -> None:
 
 
 async def test_schema_versions_row_inserted(db: DbClient) -> None:
-    await run_migrations(db)
-    result = await db.execute("SELECT version, description FROM schema_versions")
-    assert len(result.rows) == 1
+    count = await run_migrations(db)
+    result = await db.execute("SELECT version FROM schema_versions ORDER BY version ASC")
+    assert len(result.rows) == count
     assert int(result.rows[0][0]) == 1
 
 

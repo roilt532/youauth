@@ -99,6 +99,57 @@ class TestVideos:
         result = await videos.get_by_job(db, "nonexistent")
         assert result is None
 
+    async def test_script_json_none_by_default(self, video: videos.Video) -> None:
+        assert video.script_json is None
+
+    async def test_set_script_json_stores_json(
+        self, db: DbClient, video: videos.Video
+    ) -> None:
+        await videos.set_script_json(db, video.id, '{"hook_text": "test"}')
+        v = await videos.get_by_job(db, video.job_id)
+        assert v is not None
+        assert v.script_json == '{"hook_text": "test"}'
+
+    async def test_get_uploadable_returns_stored_without_upload(
+        self, db: DbClient, video: videos.Video
+    ) -> None:
+        await videos.set_r2_location(db, video.id, "videos/v.mp4", "bucket")
+        result = await videos.get_uploadable(db, 10)
+        assert any(v.id == video.id for v in result)
+
+    async def test_get_uploadable_excludes_done_uploads(
+        self, db: DbClient, video: videos.Video
+    ) -> None:
+        await videos.set_r2_location(db, video.id, "videos/v.mp4", "bucket")
+        u = await uploads.insert_upload(db, video_id=video.id)
+        await uploads.mark_done(db, u.id, "yt_abc", 1600)
+        result = await videos.get_uploadable(db, 10)
+        assert not any(v.id == video.id for v in result)
+
+    async def test_get_uploadable_includes_failed_upload(
+        self, db: DbClient, video: videos.Video
+    ) -> None:
+        await videos.set_r2_location(db, video.id, "videos/v.mp4", "bucket")
+        u = await uploads.insert_upload(db, video_id=video.id)
+        await uploads.mark_failed(db, u.id, "network error")
+        result = await videos.get_uploadable(db, 10)
+        assert any(v.id == video.id for v in result)
+
+    async def test_get_uploadable_respects_limit(
+        self, db: DbClient, job: jobs.Job
+    ) -> None:
+        for i in range(3):
+            j = await jobs.upsert_job(
+                db, idempotency_key=f"limit_test_{i}", niche_id=job.niche_id
+            )
+            v = await videos.insert_video(
+                db, job_id=j.id, niche_id=j.niche_id,
+                title=f"T{i}", script_hash="h", duration_s=30,
+            )
+            await videos.set_r2_location(db, v.id, f"videos/{i}.mp4", "b")
+        result = await videos.get_uploadable(db, 2)
+        assert len(result) == 2
+
 
 class TestUploads:
     async def test_insert_pending(self, db: DbClient, video: videos.Video) -> None:
@@ -120,6 +171,24 @@ class TestUploads:
         await uploads.mark_failed(db, u.id, "quota exceeded")
         result = await db.execute("SELECT status, error FROM uploads WHERE id = ?", [u.id])
         assert result.rows[0][0] == "failed"
+
+    async def test_get_recent_done_returns_within_window(
+        self, db: DbClient, video: videos.Video
+    ) -> None:
+        u = await uploads.insert_upload(db, video_id=video.id)
+        await uploads.mark_done(db, u.id, "yt_xyz", 1600)
+        since = int(time.time()) - 60
+        result = await uploads.get_recent_done(db, since)
+        assert any(up.youtube_video_id == "yt_xyz" for up in result)
+
+    async def test_get_recent_done_excludes_outside_window(
+        self, db: DbClient, video: videos.Video
+    ) -> None:
+        u = await uploads.insert_upload(db, video_id=video.id)
+        await uploads.mark_done(db, u.id, "yt_old", 1600)
+        since = int(time.time()) + 60
+        result = await uploads.get_recent_done(db, since)
+        assert not any(up.youtube_video_id == "yt_old" for up in result)
 
     def test_sqlite_enforces_fk_with_pragma_on(self, tmp_path: Path) -> None:
         conn = sqlite3.connect(str(tmp_path / "fk.db"))

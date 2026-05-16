@@ -88,3 +88,12 @@ async def get_pending(client: DbClient) -> list[Upload]:
 async def get_by_video_id(client: DbClient, video_id: str) -> Upload | None:
     result = await client.execute(f"{_SEL} WHERE video_id = ?", [video_id])
     return _row(result.rows[0]) if result.rows else None
+
+
+async def get_recent_done(client: DbClient, since: int) -> list[Upload]:
+    result = await client.execute(
+        f"{_SEL} WHERE status = 'done' AND youtube_video_id IS NOT NULL "
+        "AND uploaded_at >= ? ORDER BY uploaded_at ASC",
+        [since],
+    )
+    return [_row(r) for r in result.rows]
