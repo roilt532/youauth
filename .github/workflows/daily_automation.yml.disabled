@@ -1,3 +1,4 @@
+# TODO: remove after 7 days of stable cron operation on new workflows (track from first successful run)
 name: YouTube Automation Daily
 
 on:
