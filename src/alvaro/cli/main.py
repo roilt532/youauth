@@ -3,7 +3,10 @@ from __future__ import annotations
 import typer
 from loguru import logger
 
+from alvaro.cli.generate import app as generate_app
+
 app = typer.Typer(name="alvaro", help="YT Shorts automation pipeline", no_args_is_help=True)
+app.add_typer(generate_app, name="generate")
 
 
 @app.callback()
