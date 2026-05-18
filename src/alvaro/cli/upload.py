@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+from typing import Literal, cast
 
 import typer
 from loguru import logger
@@ -21,18 +22,32 @@ _QUOTA_DAILY_CAP = 9000
 app = typer.Typer(name="upload", help="Publish pending videos to YouTube")
 
 
+_VALID_PRIVACY = ("public", "unlisted", "private")
+
+
 @app.command()
 def upload(
     max_videos: int = typer.Option(5, help="Maximum number of videos to upload"),
+    privacy: str = typer.Option("public", help="Privacy status: public, unlisted, private"),
 ) -> None:
+    if privacy not in _VALID_PRIVACY:
+        raise typer.BadParameter(
+            f"privacy must be one of {_VALID_PRIVACY}, got '{privacy}'"
+        )
     try:
-        asyncio.run(_run(max_videos))
+        asyncio.run(
+            _run(max_videos, cast(Literal["public", "unlisted", "private"], privacy))
+        )
+    except SystemExit:
+        raise
     except Exception as exc:
         logger.error("unhandled error: {}", exc)
         raise typer.Exit(code=1) from exc
 
 
-async def _run(max_videos: int) -> None:
+async def _run(
+    max_videos: int, privacy: Literal["public", "unlisted", "private"]
+) -> None:
     db = build_db_client()
     await db.connect()
 
@@ -67,7 +82,7 @@ async def _run(max_videos: int) -> None:
                     r2_client=r2,
                     db=db,
                     video_db_id=vid.id,
-                    privacy_status="public",
+                    privacy_status=privacy,
                 )
                 await niches_q.increment_uploads(db, vid.niche_id)
                 logger.info(

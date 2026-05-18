@@ -285,7 +285,7 @@ class TestUpload:
         vids = [_make_uploadable_video(id=f"v{i}") for i in range(3)]
         mocks = self._patch_upload(mocker, videos=vids)
 
-        await _run(3)
+        await _run(3, "public")
 
         assert mocks["publish"].await_count == 3
 
@@ -295,7 +295,7 @@ class TestUpload:
         vids = [_make_uploadable_video(id=f"v{i}") for i in range(3)]
         mocks = self._patch_upload(mocker, videos=vids, quota_used=7600)
 
-        await _run(3)
+        await _run(3, "public")
 
         mocks["publish"].assert_not_awaited()
 
@@ -310,7 +310,7 @@ class TestUpload:
             MagicMock(video_id="yt-003"),
         ]
 
-        await _run(3)
+        await _run(3, "public")
 
         assert mocks["publish"].await_count == 3
         assert mocks["increment_uploads"].await_count == 2
@@ -325,7 +325,7 @@ class TestUpload:
             MagicMock(video_id="yt-002"),
         ]
 
-        await _run(3)
+        await _run(3, "public")
 
         assert mocks["publish"].await_count == 1
 
@@ -337,9 +337,30 @@ class TestUpload:
         vid = _make_uploadable_video(script_json=None)
         mocks = self._patch_upload(mocker, videos=[vid])
 
-        await _run(1)
+        await _run(1, "public")
 
         mocks["publish"].assert_not_awaited()
+
+    async def test_privacy_passed_to_publish_video(
+        self, mocker: MockerFixture
+    ) -> None:
+        from alvaro.cli.upload import _run
+
+        mocks = self._patch_upload(mocker)
+
+        await _run(1, "unlisted")
+
+        call_kwargs = mocks["publish"].call_args.kwargs
+        assert call_kwargs["privacy_status"] == "unlisted"
+
+    def test_invalid_privacy_raises_bad_parameter(self) -> None:
+        import typer.testing
+
+        from alvaro.cli.upload import app as upload_app
+
+        runner = typer.testing.CliRunner()
+        result = runner.invoke(upload_app, ["--privacy", "internal"])
+        assert result.exit_code != 0
 
 
 def _an(mocker: MockerFixture, target: str, **kw: object) -> MagicMock:

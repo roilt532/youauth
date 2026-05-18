@@ -6,7 +6,17 @@ on:
       - "Generate Videos"
     types:
       - completed  # triggers on success AND failure - upload whatever made it to R2
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      privacy:
+        description: "Privacy status for uploaded videos"
+        required: true
+        default: "unlisted"
+        type: choice
+        options:
+          - public
+          - unlisted
+          - private
 
 jobs:
   upload:
@@ -47,4 +57,4 @@ jobs:
         run: pip install -e ".[dev,test]"
 
       - name: Upload pending videos
-        run: alvaro upload --max-videos 5
+        run: alvaro upload --max-videos 5 --privacy "${{ inputs.privacy || 'public' }}"
