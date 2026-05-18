@@ -68,3 +68,31 @@ niches:
     hook_style: "nunca viste esto en [juego conocido]"
     max_duration_s: 55
     target_audience: gamers 16-35
+
+  - id: curiosities
+    label: Curiosidades virales del mundo
+    schedule_utc: ["08:00", "14:00", "20:00"]
+    keywords:
+      - fenomenos cotidianos
+      - datos sorprendentes
+      - vida diaria explicada
+      - cosas que no sabias
+      - comportamiento humano
+    tone: divulgativo, asombro genuino, hook fuerte
+    hook_style: te apuesto que no sabias o dato impactante directo
+    max_duration_s: 55
+    target_audience: generalista 16-45
+
+  - id: gaming_minecraft
+    label: Datos rapidos con vibe gaming
+    schedule_utc: ["08:00", "14:00", "20:00"]
+    keywords:
+      - dato sorprendente
+      - hecho rapido
+      - curiosidad cientifica
+      - historia rapida
+      - fenomeno raro
+    tone: directo, ritmo alto, energetico
+    hook_style: pregunta provocadora o dato cuantificado
+    max_duration_s: 50
+    target_audience: gamers 14-30
