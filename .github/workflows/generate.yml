@@ -45,7 +45,7 @@ jobs:
           - gaming_minecraft
 
     concurrency:
-      group: "generate-${{ matrix.niche }}-${{ env.SLOT }}"
+      group: "generate-${{ matrix.niche }}"
       cancel-in-progress: false
 
     env:
