@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import time
 from pathlib import Path
+from typing import Any
 
 from loguru import logger
 
@@ -44,12 +45,14 @@ async def _applied_versions(client: DbClient) -> set[int]:
 
 
 async def _apply(client: DbClient, path: Path, version: int, description: str) -> None:
-    for stmt in _split(path.read_text()):
-        await client.execute(stmt)
-    await client.execute(
-        "INSERT INTO schema_versions (version, applied_at, description) VALUES (?, ?, ?)",
-        [version, int(time.time()), description],
+    statements: list[tuple[str, list[Any]]] = [(s, []) for s in _split(path.read_text())]
+    statements.append(
+        (
+            "INSERT INTO schema_versions (version, applied_at, description) VALUES (?, ?, ?)",
+            [version, int(time.time()), description],
+        )
     )
+    await client.batch(statements)
 
 
 def _split(sql: str) -> list[str]:

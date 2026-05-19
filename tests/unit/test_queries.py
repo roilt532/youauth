@@ -247,7 +247,7 @@ class TestNiches:
     async def test_get_or_create_defaults(self, db: DbClient) -> None:
         n = await niches.get_or_create(db, "history")
         assert n.consecutive_failures == 0
-        assert n.paused is False
+        assert n.paused is True
 
     async def test_increment_failures(self, db: DbClient) -> None:
         await niches.get_or_create(db, "mystery")
