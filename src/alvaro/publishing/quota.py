@@ -21,9 +21,7 @@ async def get_daily_quota_used(db: DbClient) -> int:
 async def reserve_quota(db: DbClient, units: int) -> None:
     ok = await quota_q.can_upload(db, _today_utc())
     if not ok:
-        raise QuotaExceededError(
-            f"daily quota {quota_q.QUOTA_DAILY_LIMIT} would be exceeded"
-        )
+        raise QuotaExceededError(f"daily quota {quota_q.QUOTA_DAILY_LIMIT} would be exceeded")
 
 
 async def record_quota_usage(db: DbClient, units: int, video_id: str) -> None:

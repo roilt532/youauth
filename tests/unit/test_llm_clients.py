@@ -10,12 +10,12 @@ from alvaro.llm.groq_client import GroqClient
 
 
 def test_strip_fences_removes_json_block() -> None:
-    raw = "```json\n{\"key\": \"value\"}\n```"
+    raw = '```json\n{"key": "value"}\n```'
     assert _strip_fences(raw) == '{"key": "value"}'
 
 
 def test_strip_fences_removes_plain_block() -> None:
-    raw = "```\n{\"key\": 1}\n```"
+    raw = '```\n{"key": 1}\n```'
     assert _strip_fences(raw) == '{"key": 1}'
 
 

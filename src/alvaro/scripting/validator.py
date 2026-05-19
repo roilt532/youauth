@@ -4,8 +4,19 @@ from alvaro.scripting.models import _VALID_BACKGROUNDS, Script, ValidationResult
 
 _ES_TRIGGERS: frozenset[str] = frozenset(
     [
-        "sabias", "nunca", "esto", "por", "que", "cual", "como", "cuando", "donde", "quien",
-        "en", "nadie", "habia",
+        "sabias",
+        "nunca",
+        "esto",
+        "por",
+        "que",
+        "cual",
+        "como",
+        "cuando",
+        "donde",
+        "quien",
+        "en",
+        "nadie",
+        "habia",
     ]
 )
 _EN_TRIGGERS: frozenset[str] = frozenset(
@@ -41,9 +52,7 @@ def validate_script(
         )
 
     if script.total_duration_estimate_s > max_duration_s:
-        errors.append(
-            f"duration {script.total_duration_estimate_s}s exceeds max {max_duration_s}s"
-        )
+        errors.append(f"duration {script.total_duration_estimate_s}s exceeds max {max_duration_s}s")
 
     if script.suggested_voice_id not in niche_voice_ids:
         errors.append(
@@ -51,8 +60,6 @@ def validate_script(
         )
 
     if script.suggested_background_niche not in _VALID_BACKGROUNDS:
-        errors.append(
-            f"suggested_background_niche '{script.suggested_background_niche}' not valid"
-        )
+        errors.append(f"suggested_background_niche '{script.suggested_background_niche}' not valid")
 
     return ValidationResult(ok=len(errors) == 0, errors=errors)

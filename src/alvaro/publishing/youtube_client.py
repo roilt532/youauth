@@ -34,15 +34,9 @@ def _upload_resumable(
     body: dict[str, Any],
     mp4_path: Path,
 ) -> str:
-    media = MediaFileUpload(
-        str(mp4_path), mimetype="video/*", chunksize=8_388_608, resumable=True
-    )
+    media = MediaFileUpload(str(mp4_path), mimetype="video/*", chunksize=8_388_608, resumable=True)
     try:
-        resp = (
-            service.videos()
-            .insert(part="snippet,status", body=body, media_body=media)
-            .execute()
-        )
+        resp = service.videos().insert(part="snippet,status", body=body, media_body=media).execute()
         return str(resp["id"])
     except HttpError as exc:
         status = int(exc.resp.status)
@@ -62,18 +56,12 @@ class YouTubeClient:
                 client_secret=os.environ["YT_CLIENT_SECRET"],
                 token_uri=_TOKEN_URI,
             )
-            self._service: Any = build(
-                "youtube", "v3", credentials=creds, cache_discovery=False
-            )
+            self._service: Any = build("youtube", "v3", credentials=creds, cache_discovery=False)
         except google.auth.exceptions.RefreshError as exc:
-            raise PublishingError(
-                "OAuth refresh failed, re-run bootstrap_oauth.py"
-            ) from exc
+            raise PublishingError("OAuth refresh failed, re-run bootstrap_oauth.py") from exc
 
     async def upload(self, body: dict[str, Any], mp4_path: Path) -> str:
         try:
             return await asyncio.to_thread(_upload_resumable, self._service, body, mp4_path)
         except google.auth.exceptions.RefreshError as exc:
-            raise PublishingError(
-                "OAuth refresh failed, re-run bootstrap_oauth.py"
-            ) from exc
+            raise PublishingError("OAuth refresh failed, re-run bootstrap_oauth.py") from exc

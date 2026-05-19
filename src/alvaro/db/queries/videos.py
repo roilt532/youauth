@@ -76,14 +76,10 @@ async def insert_video(
 
 
 async def set_file_sha256(client: DbClient, video_id: str, sha256: str) -> None:
-    await client.execute(
-        "UPDATE videos SET file_sha256 = ? WHERE id = ?", [sha256, video_id]
-    )
+    await client.execute("UPDATE videos SET file_sha256 = ? WHERE id = ?", [sha256, video_id])
 
 
-async def set_r2_location(
-    client: DbClient, video_id: str, r2_key: str, r2_bucket: str
-) -> None:
+async def set_r2_location(client: DbClient, video_id: str, r2_key: str, r2_bucket: str) -> None:
     await client.execute(
         "UPDATE videos SET r2_key = ?, r2_bucket = ?, status = 'stored' WHERE id = ?",
         [r2_key, r2_bucket, video_id],
@@ -91,9 +87,7 @@ async def set_r2_location(
 
 
 async def set_script_json(client: DbClient, video_id: str, script_json: str) -> None:
-    await client.execute(
-        "UPDATE videos SET script_json = ? WHERE id = ?", [script_json, video_id]
-    )
+    await client.execute("UPDATE videos SET script_json = ? WHERE id = ?", [script_json, video_id])
 
 
 async def get_by_job(client: DbClient, job_id: str) -> Video | None:

@@ -49,35 +49,49 @@ def _build_header(font: str) -> str:
         "-1,0,0,0,100,100,0,0,1,{ol},{sh},2,20,20,{mv},1"
     )
     default_style = style_fmt.format(
-        name="Default", font=font, size=_FONT_SIZE,
-        primary=colour_white, secondary=colour_yellow,
-        outline=colour_black, back=colour_black,
-        ol=_OUTLINE, sh=_SHADOW, mv=_MARGIN_V,
+        name="Default",
+        font=font,
+        size=_FONT_SIZE,
+        primary=colour_white,
+        secondary=colour_yellow,
+        outline=colour_black,
+        back=colour_black,
+        ol=_OUTLINE,
+        sh=_SHADOW,
+        mv=_MARGIN_V,
     )
     keyword_style = style_fmt.format(
-        name="Keyword", font=font, size=_FONT_SIZE,
-        primary=colour_yellow, secondary=colour_yellow,
-        outline=colour_black, back=colour_black,
-        ol=_OUTLINE, sh=_SHADOW, mv=_MARGIN_V,
+        name="Keyword",
+        font=font,
+        size=_FONT_SIZE,
+        primary=colour_yellow,
+        secondary=colour_yellow,
+        outline=colour_black,
+        back=colour_black,
+        ol=_OUTLINE,
+        sh=_SHADOW,
+        mv=_MARGIN_V,
     )
-    return "\n".join([
-        "[Script Info]",
-        "ScriptType: v4.00+",
-        "PlayResX: 1080",
-        "PlayResY: 1920",
-        "WrapStyle: 0",
-        "",
-        "[V4+ Styles]",
-        "Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, "
-        "OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, "
-        "ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, "
-        "Alignment, MarginL, MarginR, MarginV, Encoding",
-        default_style,
-        keyword_style,
-        "",
-        "[Events]",
-        "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text",
-    ])
+    return "\n".join(
+        [
+            "[Script Info]",
+            "ScriptType: v4.00+",
+            "PlayResX: 1080",
+            "PlayResY: 1920",
+            "WrapStyle: 0",
+            "",
+            "[V4+ Styles]",
+            "Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, "
+            "OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, "
+            "ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, "
+            "Alignment, MarginL, MarginR, MarginV, Encoding",
+            default_style,
+            keyword_style,
+            "",
+            "[Events]",
+            "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text",
+        ]
+    )
 
 
 _ANIM = (

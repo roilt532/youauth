@@ -100,9 +100,15 @@ async def test_generate_ideas_includes_few_shots() -> None:
 
 def test_select_best_picks_highest_score() -> None:
     candidates = [
-        IdeaCandidate(hook="h", topic="A", angle="a", estimated_engagement_score=5, niche_id="science"),  # noqa: E501
-        IdeaCandidate(hook="h", topic="B", angle="a", estimated_engagement_score=9, niche_id="science"),  # noqa: E501
-        IdeaCandidate(hook="h", topic="C", angle="a", estimated_engagement_score=7, niche_id="science"),  # noqa: E501
+        IdeaCandidate(
+            hook="h", topic="A", angle="a", estimated_engagement_score=5, niche_id="science"
+        ),  # noqa: E501
+        IdeaCandidate(
+            hook="h", topic="B", angle="a", estimated_engagement_score=9, niche_id="science"
+        ),  # noqa: E501
+        IdeaCandidate(
+            hook="h", topic="C", angle="a", estimated_engagement_score=7, niche_id="science"
+        ),  # noqa: E501
     ]
     best = select_best(candidates)
     assert best.estimated_engagement_score == 9
@@ -123,7 +129,9 @@ def test_select_best_tiebreak_by_hook() -> None:
 
 def test_select_best_single_candidate() -> None:
     candidates = [
-        IdeaCandidate(hook="H", topic="X", angle="a", estimated_engagement_score=7, niche_id="science")  # noqa: E501
+        IdeaCandidate(
+            hook="H", topic="X", angle="a", estimated_engagement_score=7, niche_id="science"
+        )  # noqa: E501
     ]
     assert select_best(candidates).hook == "H"
 

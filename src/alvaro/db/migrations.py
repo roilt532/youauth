@@ -43,9 +43,7 @@ async def _applied_versions(client: DbClient) -> set[int]:
     return {int(row[0]) for row in result.rows}
 
 
-async def _apply(
-    client: DbClient, path: Path, version: int, description: str
-) -> None:
+async def _apply(client: DbClient, path: Path, version: int, description: str) -> None:
     for stmt in _split(path.read_text()):
         await client.execute(stmt)
     await client.execute(
@@ -63,5 +61,3 @@ def _parse_version(filename: str) -> int | None:
         return int(filename.split("_")[0])
     except (ValueError, IndexError):
         return None
-
-

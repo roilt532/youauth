@@ -29,12 +29,11 @@ def test_not_connected_raises(client: DbClient) -> None:
         client._ensure_connected()
 
 
-async def test_connect_calls_create_client(
-    client: DbClient, mock_libsql: MagicMock
-) -> None:
+async def test_connect_calls_create_client(client: DbClient, mock_libsql: MagicMock) -> None:
     await client.connect()
     mock_libsql.create_client.assert_called_once_with(
-        url="libsql://test.turso.io", auth_token="tok"  # noqa: S106
+        url="libsql://test.turso.io",
+        auth_token="tok",  # noqa: S106
     )
 
 
@@ -52,9 +51,7 @@ async def test_connect_executes_pragma_foreign_keys(
     mock_libsql.create_client.return_value.execute.assert_awaited()
 
 
-async def test_execute_uses_statement(
-    client: DbClient, mock_libsql: MagicMock
-) -> None:
+async def test_execute_uses_statement(client: DbClient, mock_libsql: MagicMock) -> None:
     await client.connect()
     await client.execute("SELECT 1", [42])
     mock_libsql.Statement.assert_any_call("SELECT 1", [42])

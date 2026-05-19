@@ -25,5 +25,4 @@ class AudioMetadata:
 
 
 class TTSClient(Protocol):
-    async def synthesize(self, text: str, voice_id: str, output_path: Path) -> Path:
-        ...
+    async def synthesize(self, text: str, voice_id: str, output_path: Path) -> Path: ...

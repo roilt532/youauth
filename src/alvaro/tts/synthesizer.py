@@ -45,9 +45,7 @@ async def synthesize_script(
     except TTSNetworkError as exc:
         logger.warning("edge-tts failed, falling back to piper: {}", exc)
         piper_client = PiperClient(voices)
-        plain_text = "\n\n".join(
-            [script.hook_text] + script.body_lines + [script.payoff_text]
-        )
+        plain_text = "\n\n".join([script.hook_text] + script.body_lines + [script.payoff_text])
         await piper_client.synthesize(plain_text, voice_id, raw_path)
 
     lufs = loudnorm(raw_path, output_path)

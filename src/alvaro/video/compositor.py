@@ -50,7 +50,10 @@ def _build_filter_complex(
 
 def _run_ffmpeg(cmd: list[str]) -> subprocess.CompletedProcess[bytes]:
     return subprocess.run(  # noqa: S603
-        cmd, capture_output=True, check=False, timeout=600,
+        cmd,
+        capture_output=True,
+        check=False,
+        timeout=600,
     )
 
 
@@ -68,19 +71,37 @@ async def compose_video(
     filter_complex = _build_filter_complex(bg_duration, audio_duration, subs_path)
 
     cmd = [  # noqa: S607
-        "ffmpeg", "-y",
-        "-i", str(background_path),
-        "-i", str(audio_path),
-        "-filter_complex", filter_complex,
-        "-map", "[v_out]",
-        "-map", "[a_out]",
-        "-c:v", "libx264", "-preset", "fast", "-crf", "23",
-        "-c:a", "aac", "-b:a", "192k",
-        "-r", str(_FPS),
-        "-pix_fmt", "yuv420p",
-        "-movflags", "+faststart",
+        "ffmpeg",
+        "-y",
+        "-i",
+        str(background_path),
+        "-i",
+        str(audio_path),
+        "-filter_complex",
+        filter_complex,
+        "-map",
+        "[v_out]",
+        "-map",
+        "[a_out]",
+        "-c:v",
+        "libx264",
+        "-preset",
+        "fast",
+        "-crf",
+        "23",
+        "-c:a",
+        "aac",
+        "-b:a",
+        "192k",
+        "-r",
+        str(_FPS),
+        "-pix_fmt",
+        "yuv420p",
+        "-movflags",
+        "+faststart",
         str(output_path),
-        "-loglevel", "error",
+        "-loglevel",
+        "error",
     ]
 
     result = await asyncio.to_thread(_run_ffmpeg, cmd)

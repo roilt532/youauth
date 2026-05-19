@@ -33,9 +33,7 @@ def _reconstruct_result(
         title=str(meta["snippet"]["title"]),
         description=str(meta["snippet"]["description"]),
         privacy_status=upload.privacy,
-        upload_timestamp=datetime.datetime.fromtimestamp(
-            upload.uploaded_at or 0, tz=datetime.UTC
-        ),
+        upload_timestamp=datetime.datetime.fromtimestamp(upload.uploaded_at or 0, tz=datetime.UTC),
         quota_units_consumed=0,
     )
 
@@ -57,8 +55,7 @@ async def publish_video(
             return _reconstruct_result(existing, script, script.niche_id, privacy_status)
         if existing.status == "uploading":
             raise PublishingError(
-                "upload in inconsistent state, "
-                "manual review in YouTube Studio required"
+                "upload in inconsistent state, " "manual review in YouTube Studio required"
             )
 
     tmp = Path(f"/tmp/{job_id}_upload.mp4")  # noqa: S108

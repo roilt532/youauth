@@ -55,8 +55,17 @@ async def insert_snapshot(
     await client.execute(
         "INSERT INTO metrics (id, youtube_video_id, snapshot_at, views, likes, "
         "comments, watch_time_s, impressions, ctr_pct) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        [snap_id, youtube_video_id, snapshot_at, views, likes, comments,
-         watch_time_s, impressions, ctr_pct],
+        [
+            snap_id,
+            youtube_video_id,
+            snapshot_at,
+            views,
+            likes,
+            comments,
+            watch_time_s,
+            impressions,
+            ctr_pct,
+        ],
     )
     result = await client.execute(f"{_SEL} WHERE id = ?", [snap_id])
     return _row(result.rows[0])

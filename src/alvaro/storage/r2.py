@@ -37,8 +37,11 @@ class R2Client:
             size = int(head["ContentLength"])
             logger.debug("r2 upload key={} bytes={}", key, size)
             return AssetMeta(
-                key=key, bucket=self._bucket, etag=etag,
-                size_bytes=size, content_type=content_type,
+                key=key,
+                bucket=self._bucket,
+                etag=etag,
+                size_bytes=size,
+                content_type=content_type,
             )
         except ClientError as exc:
             raise StorageError(key, "upload", str(exc)) from exc

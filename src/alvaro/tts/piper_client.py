@@ -72,8 +72,10 @@ class PiperClient:
         binary = self._resolve_binary()
         cmd = [
             binary,
-            "--model", str(onnx_path),
-            "--output_file", str(output_path),
+            "--model",
+            str(onnx_path),
+            "--output_file",
+            str(output_path),
         ]
         try:
             proc = subprocess.run(  # noqa: S603

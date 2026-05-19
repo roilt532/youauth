@@ -14,8 +14,4 @@ def build_ssml(script: Script, rate: str, pitch: str) -> str:
         parts.append(html.escape(line))
     parts.append(html.escape(script.payoff_text))
     inner = f" {_BREAK} ".join(parts)
-    return (
-        f'<speak><prosody rate="{rate}" pitch="{pitch}">'
-        f"{inner}"
-        f"</prosody></speak>"
-    )
+    return f'<speak><prosody rate="{rate}" pitch="{pitch}">' f"{inner}" f"</prosody></speak>"

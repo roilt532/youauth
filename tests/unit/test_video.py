@@ -86,9 +86,7 @@ class TestSelectBackground:
         r2.download_asset.assert_not_called()
         assert result == cached
 
-    async def test_downloads_and_caches(
-        self, tmp_path: Path, mocker: MockerFixture
-    ) -> None:
+    async def test_downloads_and_caches(self, tmp_path: Path, mocker: MockerFixture) -> None:
         asset = BackgroundAsset(key="backgrounds/mc/clip.mp4", niche_id="mc", filename="clip.mp4")
         r2 = mocker.MagicMock()
         r2.list_backgrounds.return_value = [asset]
@@ -104,28 +102,36 @@ class TestSelectBackground:
 class TestBuildFilterComplex:
     def test_loop_when_bg_shorter_than_content(self) -> None:
         fc = _build_filter_complex(
-            bg_duration=10.0, content_duration=45.0, subs_path=Path("/tmp/s.ass")  # noqa: S108
+            bg_duration=10.0,
+            content_duration=45.0,
+            subs_path=Path("/tmp/s.ass"),  # noqa: S108
         )
         assert "loop=loop=-1" in fc
         assert "trim=end=45.000" in fc
 
     def test_trim_when_bg_longer_than_content(self) -> None:
         fc = _build_filter_complex(
-            bg_duration=120.0, content_duration=45.0, subs_path=Path("/tmp/s.ass")  # noqa: S108
+            bg_duration=120.0,
+            content_duration=45.0,
+            subs_path=Path("/tmp/s.ass"),  # noqa: S108
         )
         assert "loop=loop=-1" not in fc
         assert "trim=end=45.000" in fc
 
     def test_ass_filename_in_filter(self) -> None:
         fc = _build_filter_complex(
-            bg_duration=10.0, content_duration=45.0, subs_path=Path("/tmp/s.ass")  # noqa: S108
+            bg_duration=10.0,
+            content_duration=45.0,
+            subs_path=Path("/tmp/s.ass"),  # noqa: S108
         )
         assert "ass=filename=" in fc
         assert "s.ass" in fc
 
     def test_audio_silence_for_intro(self) -> None:
         fc = _build_filter_complex(
-            bg_duration=10.0, content_duration=45.0, subs_path=Path("/tmp/s.ass")  # noqa: S108
+            bg_duration=10.0,
+            content_duration=45.0,
+            subs_path=Path("/tmp/s.ass"),  # noqa: S108
         )
         assert "anullsrc" in fc
         assert "[a_silence][1:a]concat" in fc
@@ -135,6 +141,7 @@ class TestBuildFilterComplex:
 class TestComposeVideo:
     def _make_completed(self, returncode: int = 0) -> object:
         import subprocess
+
         result = subprocess.CompletedProcess(args=[], returncode=returncode)
         result.stdout = b""
         result.stderr = b"error detail" if returncode != 0 else b""
@@ -161,9 +168,7 @@ class TestComposeVideo:
                 r2_client=r2,
             )
 
-    async def test_metadata_contains_r2_key(
-        self, tmp_path: Path, mocker: MockerFixture
-    ) -> None:
+    async def test_metadata_contains_r2_key(self, tmp_path: Path, mocker: MockerFixture) -> None:
         mocker.patch("alvaro.video.compositor.probe_duration", return_value=48.0)
         mocker.patch(
             "alvaro.video.compositor._run_ffmpeg",

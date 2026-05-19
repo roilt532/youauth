@@ -64,11 +64,16 @@ def loudnorm(input_path: Path, output_path: Path, timeout_s: int = 60) -> float:
     )
     stderr2 = _run_ffmpeg(
         [
-            "-i", str(input_path),
-            "-af", filter2,
-            "-ar", str(_SAMPLE_RATE),
-            "-ac", "1",
-            "-b:a", "128k",
+            "-i",
+            str(input_path),
+            "-af",
+            filter2,
+            "-ar",
+            str(_SAMPLE_RATE),
+            "-ac",
+            "1",
+            "-b:a",
+            "128k",
             str(output_path),
         ],
         timeout_s=timeout_s,

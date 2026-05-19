@@ -36,9 +36,7 @@ def _row(r: Any) -> NicheState:
 
 
 async def get_or_create(client: DbClient, niche_id: str) -> NicheState:
-    await client.execute(
-        "INSERT OR IGNORE INTO niches_state (niche_id) VALUES (?)", [niche_id]
-    )
+    await client.execute("INSERT OR IGNORE INTO niches_state (niche_id) VALUES (?)", [niche_id])
     result = await client.execute(f"{_SEL} WHERE niche_id = ?", [niche_id])
     return _row(result.rows[0])
 

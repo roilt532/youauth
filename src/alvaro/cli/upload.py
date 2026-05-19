@@ -18,26 +18,19 @@ from alvaro.storage.r2 import build_r2_client
 
 _UNITS_PER_UPLOAD = 1600
 _QUOTA_DAILY_CAP = 9000
-
-app = typer.Typer(name="upload", help="Publish pending videos to YouTube")
-
-
 _VALID_PRIVACY = ("public", "unlisted", "private")
 
+__all__ = ["upload_cmd"]
 
-@app.command()
-def upload(
+
+def upload_cmd(
     max_videos: int = typer.Option(5, help="Maximum number of videos to upload"),
     privacy: str = typer.Option("public", help="Privacy status: public, unlisted, private"),
 ) -> None:
     if privacy not in _VALID_PRIVACY:
-        raise typer.BadParameter(
-            f"privacy must be one of {_VALID_PRIVACY}, got '{privacy}'"
-        )
+        raise typer.BadParameter(f"privacy must be one of {_VALID_PRIVACY}, got '{privacy}'")
     try:
-        asyncio.run(
-            _run(max_videos, cast(Literal["public", "unlisted", "private"], privacy))
-        )
+        asyncio.run(_run(max_videos, cast(Literal["public", "unlisted", "private"], privacy)))
     except SystemExit:
         raise
     except Exception as exc:
@@ -45,9 +38,7 @@ def upload(
         raise typer.Exit(code=1) from exc
 
 
-async def _run(
-    max_videos: int, privacy: Literal["public", "unlisted", "private"]
-) -> None:
+async def _run(max_videos: int, privacy: Literal["public", "unlisted", "private"]) -> None:
     db = build_db_client()
     await db.connect()
 
@@ -85,9 +76,7 @@ async def _run(
                     privacy_status=privacy,
                 )
                 await niches_q.increment_uploads(db, vid.niche_id)
-                logger.info(
-                    "uploaded video_id={} yt_id={}", vid.id, result.video_id
-                )
+                logger.info("uploaded video_id={} yt_id={}", vid.id, result.video_id)
                 ok += 1
             except QuotaExceededError:
                 logger.warning("quota exceeded mid-loop, stopping")
@@ -96,9 +85,7 @@ async def _run(
                 logger.error("upload failed video_id={} err={}", vid.id, exc)
                 failed += 1
 
-        logger.info(
-            "upload done ok={} failed={} skipped={}", ok, failed, skipped
-        )
+        logger.info("upload done ok={} failed={} skipped={}", ok, failed, skipped)
 
     finally:
         await db.close()

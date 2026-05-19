@@ -12,11 +12,10 @@ from alvaro.db.queries import metrics as metrics_q
 from alvaro.db.queries import uploads as uploads_q
 from alvaro.publishing.youtube_client import YouTubeClient
 
-app = typer.Typer(name="analytics", help="Pull YouTube video stats into metrics table")
+__all__ = ["analytics_cmd"]
 
 
-@app.command()
-def analytics(
+def analytics_cmd(
     window_days: int = typer.Option(7, help="Number of days to look back"),
 ) -> None:
     try:
@@ -28,8 +27,7 @@ def analytics(
 
 async def _run(window_days: int) -> None:
     since = int(
-        (datetime.datetime.now(tz=datetime.UTC) - datetime.timedelta(days=window_days))
-        .timestamp()
+        (datetime.datetime.now(tz=datetime.UTC) - datetime.timedelta(days=window_days)).timestamp()
     )
 
     db = build_db_client()

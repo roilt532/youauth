@@ -47,7 +47,5 @@ async def test_niche_create_and_job_roundtrip(db: object) -> None:
     assert job.id == job2.id
 
     await jobs.mark_done(db, job.id)
-    result = await db.execute(
-        "SELECT status FROM jobs WHERE id = ?", [job.id]
-    )
+    result = await db.execute("SELECT status FROM jobs WHERE id = ?", [job.id])
     assert result.rows[0][0] == "done"

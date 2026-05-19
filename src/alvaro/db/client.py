@@ -50,7 +50,7 @@ class DbClient:
 
 def _normalize_turso_url(url: str) -> str:
     if url.startswith("libsql://"):
-        return "https://" + url[len("libsql://"):]
+        return "https://" + url[len("libsql://") :]
     return url
 
 

@@ -10,8 +10,7 @@ class LLMTransientError(Exception):
 
 @runtime_checkable
 class LLMClient(Protocol):
-    async def complete(self, system: str, user: str, temperature: float = 0.7) -> str:
-        ...
+    async def complete(self, system: str, user: str, temperature: float = 0.7) -> str: ...
 
 
 def _strip_fences(text: str) -> str:

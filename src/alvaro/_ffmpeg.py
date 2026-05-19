@@ -7,9 +7,13 @@ from pathlib import Path
 def probe_duration(path: Path) -> float:
     result = subprocess.run(  # noqa: S603
         [  # noqa: S607
-            "ffprobe", "-v", "error",
-            "-show_entries", "format=duration",
-            "-of", "default=noprint_wrappers=1:nokey=1",
+            "ffprobe",
+            "-v",
+            "error",
+            "-show_entries",
+            "format=duration",
+            "-of",
+            "default=noprint_wrappers=1:nokey=1",
             str(path),
         ],
         capture_output=True,

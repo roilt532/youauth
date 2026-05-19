@@ -179,11 +179,16 @@ class TestStyler:
 
         script = _make_script(
             hook="alpha bravo charlie delta echo foxtrot gamma",
-            body=[], payoff="",
+            body=[],
+            payoff="",
         )
         words = [
-            _word("alpha"), _word("bravo"), _word("charlie"),
-            _word("delta"), _word("echo"), _word("foxtrot"),
+            _word("alpha"),
+            _word("bravo"),
+            _word("charlie"),
+            _word("delta"),
+            _word("echo"),
+            _word("foxtrot"),
             _word("gamma"),
         ]
         result = apply_keywords(words, script, "es")
@@ -339,7 +344,8 @@ class TestBuilder:
         audio.touch()
         script = _make_script(
             hook="estos son exactamente diez palabras distintas aqui mismo ahora bien",
-            body=[], payoff="",
+            body=[],
+            payoff="",
         )
         short_words = [_word("hola", 0.0, 0.5)]
         with (
@@ -350,17 +356,26 @@ class TestBuilder:
             patch("alvaro.subtitles.builder._resolve_language", return_value="es"),
         ):
             import logging
+
             with caplog.at_level(logging.WARNING):
                 await build_subtitles(audio, script, tmp_path / "subs.ass")
 
     async def test_resolves_language_from_voice(self, tmp_path: Path) -> None:
         from alvaro.config.loader import FallbackVoiceConfig, VoiceConfig, VoicesConfig
         from alvaro.subtitles.builder import _resolve_language
+
         mock_voices = VoicesConfig(
-            voices=[VoiceConfig(
-                id="alvaro_es", engine="edge-tts", voice="es-ES-AlvaroNeural",
-                language="es-ES", rate="+5%", pitch="+0Hz", niches=["science"],
-            )],
+            voices=[
+                VoiceConfig(
+                    id="alvaro_es",
+                    engine="edge-tts",
+                    voice="es-ES-AlvaroNeural",
+                    language="es-ES",
+                    rate="+5%",
+                    pitch="+0Hz",
+                    niches=["science"],
+                )
+            ],
             fallback=FallbackVoiceConfig(engine="piper", model="x", binary="piper", niches=["*"]),
             niche_voice_map={},
         )
@@ -371,6 +386,7 @@ class TestBuilder:
     async def test_unknown_voice_defaults_es(self, tmp_path: Path) -> None:
         from alvaro.config.loader import FallbackVoiceConfig, VoicesConfig
         from alvaro.subtitles.builder import _resolve_language
+
         mock_voices = VoicesConfig(
             voices=[],
             fallback=FallbackVoiceConfig(engine="piper", model="x", binary="piper", niches=["*"]),

@@ -148,7 +148,9 @@ class TestValidateScript:
         assert result.errors == []
 
     def test_invalid_hook_reported(self) -> None:
-        result = validate_script(self._make_script(hook_text="Hola amigos bienvenidos"), ["alvaro_es"], 55)  # noqa: E501
+        result = validate_script(
+            self._make_script(hook_text="Hola amigos bienvenidos"), ["alvaro_es"], 55
+        )  # noqa: E501
         assert result.ok is False
         assert any("hook" in e for e in result.errors)
 

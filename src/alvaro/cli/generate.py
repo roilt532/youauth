@@ -30,11 +30,10 @@ from alvaro.tts.synthesizer import synthesize_script
 from alvaro.video.background import select_background
 from alvaro.video.compositor import compose_video
 
-app = typer.Typer(name="generate", help="Run full video generation pipeline for a niche+slot")
+__all__ = ["generate_cmd"]
 
 
-@app.command()
-def generate(
+def generate_cmd(
     niche: str = typer.Option(..., help="Niche ID (e.g. science, history)"),
     slot: str = typer.Option(..., help="Time slot: morning | noon | evening"),
 ) -> None:
@@ -87,12 +86,8 @@ async def _run(niche_id: str, slot: str) -> None:
 
         await synthesize_script(script, script.suggested_voice_id, voices, audio_path)
         await build_subtitles(audio_path, script, subs_path)
-        bg_path = await select_background(
-            script.suggested_background_niche, r2, job_id=job.id
-        )
-        video_meta = await compose_video(
-            audio_path, bg_path, subs_path, output_path, job.id, r2
-        )
+        bg_path = await select_background(script.suggested_background_niche, r2, job_id=job.id)
+        video_meta = await compose_video(audio_path, bg_path, subs_path, output_path, job.id, r2)
 
         sha256 = hashlib.sha256(output_path.read_bytes()).hexdigest()
 

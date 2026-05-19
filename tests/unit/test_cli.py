@@ -74,61 +74,55 @@ class TestGenerate:
         mocks["upsert_job"] = _p(
             mocker, "jobs_q.upsert_job", new_callable=AsyncMock, return_value=job
         )
-        mocks["mark_running"] = _p(
-            mocker, "jobs_q.mark_running", new_callable=AsyncMock
-        )
+        mocks["mark_running"] = _p(mocker, "jobs_q.mark_running", new_callable=AsyncMock)
         mocks["mark_done"] = _p(mocker, "jobs_q.mark_done", new_callable=AsyncMock)
-        mocks["mark_failed"] = _p(
-            mocker, "jobs_q.mark_failed", new_callable=AsyncMock
-        )
+        mocks["mark_failed"] = _p(mocker, "jobs_q.mark_failed", new_callable=AsyncMock)
         mocks["get_or_create"] = _p(
-            mocker, "niches_q.get_or_create",
-            new_callable=AsyncMock, return_value=niche_state,
+            mocker,
+            "niches_q.get_or_create",
+            new_callable=AsyncMock,
+            return_value=niche_state,
         )
-        mocks["mark_run_started"] = _p(
-            mocker, "niches_q.mark_run_started", new_callable=AsyncMock
-        )
-        mocks["mark_success"] = _p(
-            mocker, "niches_q.mark_success", new_callable=AsyncMock
-        )
+        mocks["mark_run_started"] = _p(mocker, "niches_q.mark_run_started", new_callable=AsyncMock)
+        mocks["mark_success"] = _p(mocker, "niches_q.mark_success", new_callable=AsyncMock)
         mocks["increment_failures"] = _p(
             mocker, "niches_q.increment_failures", new_callable=AsyncMock
         )
         mocks["insert_video"] = _p(
-            mocker, "videos_q.insert_video",
-            new_callable=AsyncMock, return_value=_make_video(),
+            mocker,
+            "videos_q.insert_video",
+            new_callable=AsyncMock,
+            return_value=_make_video(),
         )
-        mocks["set_file_sha256"] = _p(
-            mocker, "videos_q.set_file_sha256", new_callable=AsyncMock
-        )
-        mocks["set_r2_location"] = _p(
-            mocker, "videos_q.set_r2_location", new_callable=AsyncMock
-        )
-        mocks["set_script_json"] = _p(
-            mocker, "videos_q.set_script_json", new_callable=AsyncMock
-        )
+        mocks["set_file_sha256"] = _p(mocker, "videos_q.set_file_sha256", new_callable=AsyncMock)
+        mocks["set_r2_location"] = _p(mocker, "videos_q.set_r2_location", new_callable=AsyncMock)
+        mocks["set_script_json"] = _p(mocker, "videos_q.set_script_json", new_callable=AsyncMock)
         mocks["load_voices"] = _p(mocker, "load_voices", return_value=MagicMock())
-        mocks["build_r2"] = _p(
-            mocker, "build_r2_client", return_value=MagicMock(_bucket="bkt")
-        )
+        mocks["build_r2"] = _p(mocker, "build_r2_client", return_value=MagicMock(_bucket="bkt"))
         _p(mocker, "GroqClient", return_value=MagicMock())
         _p(mocker, "GeminiClient", return_value=MagicMock())
         _p(mocker, "RouterClient", return_value=MagicMock())
         _p(mocker, "generate_ideas", new_callable=AsyncMock, return_value=[MagicMock()])
         _p(mocker, "select_best", return_value=MagicMock())
         _p(
-            mocker, "generate_script",
-            new_callable=AsyncMock, return_value=_make_script(),
+            mocker,
+            "generate_script",
+            new_callable=AsyncMock,
+            return_value=_make_script(),
         )
         _p(mocker, "synthesize_script", new_callable=AsyncMock)
         _p(mocker, "build_subtitles", new_callable=AsyncMock)
         _p(
-            mocker, "select_background",
-            new_callable=AsyncMock, return_value=Path("/tmp/bg.mp4"),  # noqa: S108
+            mocker,
+            "select_background",
+            new_callable=AsyncMock,
+            return_value=Path("/tmp/bg.mp4"),  # noqa: S108
         )
         _p(
-            mocker, "compose_video",
-            new_callable=AsyncMock, return_value=_make_video_meta(),
+            mocker,
+            "compose_video",
+            new_callable=AsyncMock,
+            return_value=_make_video_meta(),
         )
         _p(mocker, "shutil.rmtree")
         _p(mocker, "hashlib.sha256", return_value=MagicMock(hexdigest=lambda: "a" * 64))
@@ -136,9 +130,7 @@ class TestGenerate:
         mocker.patch("pathlib.Path.exists", return_value=True)
         return mocks
 
-    async def test_creates_job_with_correct_idempotency_key(
-        self, mocker: MockerFixture
-    ) -> None:
+    async def test_creates_job_with_correct_idempotency_key(self, mocker: MockerFixture) -> None:
         from alvaro.cli.generate import _run
 
         mocks = self._patch_all(mocker)
@@ -174,8 +166,10 @@ class TestGenerate:
 
         mocks = self._patch_all(mocker)
         _p(
-            mocker, "generate_ideas",
-            new_callable=AsyncMock, side_effect=RuntimeError("llm down"),
+            mocker,
+            "generate_ideas",
+            new_callable=AsyncMock,
+            side_effect=RuntimeError("llm down"),
         )
 
         with pytest.raises(SystemExit):
@@ -184,15 +178,15 @@ class TestGenerate:
         mocks["mark_failed"].assert_awaited_once()
         mocks["increment_failures"].assert_awaited_once()
 
-    async def test_cleanup_does_not_mask_pipeline_error(
-        self, mocker: MockerFixture
-    ) -> None:
+    async def test_cleanup_does_not_mask_pipeline_error(self, mocker: MockerFixture) -> None:
         from alvaro.cli.generate import _run
 
         self._patch_all(mocker)
         _p(
-            mocker, "generate_ideas",
-            new_callable=AsyncMock, side_effect=RuntimeError("boom"),
+            mocker,
+            "generate_ideas",
+            new_callable=AsyncMock,
+            side_effect=RuntimeError("boom"),
         )
         _p(mocker, "shutil.rmtree", side_effect=OSError("disk full"))
 
@@ -210,9 +204,7 @@ class TestGenerate:
         mocks["mark_done"].assert_awaited_once()
         mocks["mark_success"].assert_awaited_once()
 
-    async def test_script_json_stored_as_serialized_dict(
-        self, mocker: MockerFixture
-    ) -> None:
+    async def test_script_json_stored_as_serialized_dict(self, mocker: MockerFixture) -> None:
         from alvaro.cli.generate import _run
 
         mocks = self._patch_all(mocker)
@@ -263,16 +255,22 @@ class TestUpload:
         mocks["build_db"] = _up(mocker, "build_db_client", return_value=db_mock)
         mocks["build_r2"] = _up(mocker, "build_r2_client", return_value=MagicMock())
         mocks["get_uploadable"] = _up(
-            mocker, "videos_q.get_uploadable",
-            new_callable=AsyncMock, return_value=videos,
+            mocker,
+            "videos_q.get_uploadable",
+            new_callable=AsyncMock,
+            return_value=videos,
         )
         mocks["get_quota"] = _up(
-            mocker, "get_daily_quota_used",
-            new_callable=AsyncMock, return_value=quota_used,
+            mocker,
+            "get_daily_quota_used",
+            new_callable=AsyncMock,
+            return_value=quota_used,
         )
         mocks["publish"] = _up(
-            mocker, "publish_video",
-            new_callable=AsyncMock, return_value=MagicMock(video_id="yt-001"),
+            mocker,
+            "publish_video",
+            new_callable=AsyncMock,
+            return_value=MagicMock(video_id="yt-001"),
         )
         mocks["increment_uploads"] = _up(
             mocker, "niches_q.increment_uploads", new_callable=AsyncMock
@@ -329,9 +327,7 @@ class TestUpload:
 
         assert mocks["publish"].await_count == 1
 
-    async def test_skips_video_without_script_json(
-        self, mocker: MockerFixture
-    ) -> None:
+    async def test_skips_video_without_script_json(self, mocker: MockerFixture) -> None:
         from alvaro.cli.upload import _run
 
         vid = _make_uploadable_video(script_json=None)
@@ -341,9 +337,7 @@ class TestUpload:
 
         mocks["publish"].assert_not_awaited()
 
-    async def test_privacy_passed_to_publish_video(
-        self, mocker: MockerFixture
-    ) -> None:
+    async def test_privacy_passed_to_publish_video(self, mocker: MockerFixture) -> None:
         from alvaro.cli.upload import _run
 
         mocks = self._patch_upload(mocker)
@@ -356,10 +350,10 @@ class TestUpload:
     def test_invalid_privacy_raises_bad_parameter(self) -> None:
         import typer.testing
 
-        from alvaro.cli.upload import app as upload_app
+        from alvaro.cli.main import app
 
         runner = typer.testing.CliRunner()
-        result = runner.invoke(upload_app, ["--privacy", "internal"])
+        result = runner.invoke(app, ["upload", "--privacy", "internal"])
         assert result.exit_code != 0
 
 
@@ -389,22 +383,20 @@ class TestAnalytics:
         mocks: dict[str, MagicMock] = {}
         mocks["build_db"] = _an(mocker, "build_db_client", return_value=db_mock)
         mocks["get_recent_done"] = _an(
-            mocker, "uploads_q.get_recent_done",
-            new_callable=AsyncMock, return_value=uploads,
+            mocker,
+            "uploads_q.get_recent_done",
+            new_callable=AsyncMock,
+            return_value=uploads,
         )
         yt_mock = MagicMock()
         yt_mock._service.videos.return_value.list.return_value.execute.return_value = {
             "items": [{"statistics": {"viewCount": "100", "likeCount": "5", "commentCount": "2"}}]
         }
         mocks["yt_cls"] = _an(mocker, "YouTubeClient", return_value=yt_mock)
-        mocks["insert_snapshot"] = _an(
-            mocker, "metrics_q.insert_snapshot", new_callable=AsyncMock
-        )
+        mocks["insert_snapshot"] = _an(mocker, "metrics_q.insert_snapshot", new_callable=AsyncMock)
         return mocks
 
-    async def test_inserts_metric_snapshot_for_each_upload(
-        self, mocker: MockerFixture
-    ) -> None:
+    async def test_inserts_metric_snapshot_for_each_upload(self, mocker: MockerFixture) -> None:
         from alvaro.cli.analytics import _run
 
         ups = [self._make_upload("yt-1"), self._make_upload("yt-2")]
@@ -414,9 +406,7 @@ class TestAnalytics:
 
         assert mocks["insert_snapshot"].await_count == 2
 
-    async def test_skips_when_no_uploads_in_window(
-        self, mocker: MockerFixture
-    ) -> None:
+    async def test_skips_when_no_uploads_in_window(self, mocker: MockerFixture) -> None:
         from alvaro.cli.analytics import _run
 
         mocks = self._patch_analytics(mocker, uploads=[])
@@ -426,9 +416,7 @@ class TestAnalytics:
         mocks["insert_snapshot"].assert_not_awaited()
         mocks["yt_cls"].assert_not_called()
 
-    async def test_continues_on_individual_failure(
-        self, mocker: MockerFixture
-    ) -> None:
+    async def test_continues_on_individual_failure(self, mocker: MockerFixture) -> None:
         from alvaro.cli.analytics import _run
 
         ups = [self._make_upload("yt-1"), self._make_upload("yt-2")]

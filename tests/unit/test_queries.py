@@ -102,9 +102,7 @@ class TestVideos:
     async def test_script_json_none_by_default(self, video: videos.Video) -> None:
         assert video.script_json is None
 
-    async def test_set_script_json_stores_json(
-        self, db: DbClient, video: videos.Video
-    ) -> None:
+    async def test_set_script_json_stores_json(self, db: DbClient, video: videos.Video) -> None:
         await videos.set_script_json(db, video.id, '{"hook_text": "test"}')
         v = await videos.get_by_job(db, video.job_id)
         assert v is not None
@@ -135,16 +133,16 @@ class TestVideos:
         result = await videos.get_uploadable(db, 10)
         assert any(v.id == video.id for v in result)
 
-    async def test_get_uploadable_respects_limit(
-        self, db: DbClient, job: jobs.Job
-    ) -> None:
+    async def test_get_uploadable_respects_limit(self, db: DbClient, job: jobs.Job) -> None:
         for i in range(3):
-            j = await jobs.upsert_job(
-                db, idempotency_key=f"limit_test_{i}", niche_id=job.niche_id
-            )
+            j = await jobs.upsert_job(db, idempotency_key=f"limit_test_{i}", niche_id=job.niche_id)
             v = await videos.insert_video(
-                db, job_id=j.id, niche_id=j.niche_id,
-                title=f"T{i}", script_hash="h", duration_s=30,
+                db,
+                job_id=j.id,
+                niche_id=j.niche_id,
+                title=f"T{i}",
+                script_hash="h",
+                duration_s=30,
             )
             await videos.set_r2_location(db, v.id, f"videos/{i}.mp4", "b")
         result = await videos.get_uploadable(db, 2)
@@ -206,26 +204,40 @@ class TestUploads:
 class TestAssets:
     async def test_upsert_creates(self, db: DbClient) -> None:
         a = await assets.upsert_asset(
-            db, r2_key="backgrounds/science/a.mp4", asset_type="background",
-            size_bytes=1024, etag="etag1", niche_id="science",
+            db,
+            r2_key="backgrounds/science/a.mp4",
+            asset_type="background",
+            size_bytes=1024,
+            etag="etag1",
+            niche_id="science",
         )
         assert a.r2_key == "backgrounds/science/a.mp4"
 
     async def test_upsert_updates_etag(self, db: DbClient) -> None:
         await assets.upsert_asset(
-            db, r2_key="backgrounds/h.mp4", asset_type="background",
-            size_bytes=500, etag="old",
+            db,
+            r2_key="backgrounds/h.mp4",
+            asset_type="background",
+            size_bytes=500,
+            etag="old",
         )
         a = await assets.upsert_asset(
-            db, r2_key="backgrounds/h.mp4", asset_type="background",
-            size_bytes=600, etag="new",
+            db,
+            r2_key="backgrounds/h.mp4",
+            asset_type="background",
+            size_bytes=600,
+            etag="new",
         )
         assert a.etag == "new"
 
     async def test_list_backgrounds_by_niche(self, db: DbClient) -> None:
         await assets.upsert_asset(
-            db, r2_key="backgrounds/science/x.mp4", asset_type="background",
-            size_bytes=100, etag="e1", niche_id="science",
+            db,
+            r2_key="backgrounds/science/x.mp4",
+            asset_type="background",
+            size_bytes=100,
+            etag="e1",
+            niche_id="science",
         )
         result = await assets.list_backgrounds(db, niche_id="science")
         assert any(a.r2_key == "backgrounds/science/x.mp4" for a in result)
@@ -262,8 +274,12 @@ class TestNiches:
 class TestMetrics:
     async def test_insert_snapshot(self, db: DbClient) -> None:
         snap = await metrics.insert_snapshot(
-            db, youtube_video_id="yt1", snapshot_at=int(time.time()),
-            views=100, likes=10, comments=5,
+            db,
+            youtube_video_id="yt1",
+            snapshot_at=int(time.time()),
+            views=100,
+            likes=10,
+            comments=5,
         )
         assert snap.views == 100
         assert snap.ctr_pct is None
@@ -271,12 +287,20 @@ class TestMetrics:
     async def test_get_latest(self, db: DbClient) -> None:
         t = int(time.time())
         await metrics.insert_snapshot(
-            db, youtube_video_id="yt2", snapshot_at=t - 100,
-            views=50, likes=5, comments=1,
+            db,
+            youtube_video_id="yt2",
+            snapshot_at=t - 100,
+            views=50,
+            likes=5,
+            comments=1,
         )
         await metrics.insert_snapshot(
-            db, youtube_video_id="yt2", snapshot_at=t,
-            views=200, likes=20, comments=10,
+            db,
+            youtube_video_id="yt2",
+            snapshot_at=t,
+            views=200,
+            likes=20,
+            comments=10,
         )
         latest = await metrics.get_latest(db, "yt2")
         assert latest is not None

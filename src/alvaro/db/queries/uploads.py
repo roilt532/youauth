@@ -58,9 +58,7 @@ async def insert_upload(
 
 
 async def mark_uploading(client: DbClient, upload_id: str) -> None:
-    await client.execute(
-        "UPDATE uploads SET status = 'uploading' WHERE id = ?", [upload_id]
-    )
+    await client.execute("UPDATE uploads SET status = 'uploading' WHERE id = ?", [upload_id])
 
 
 async def mark_done(
