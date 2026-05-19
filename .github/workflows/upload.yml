@@ -58,3 +58,4 @@ jobs:
 
       - name: Upload pending videos
         run: alvaro upload --max-videos 5 --privacy "${{ inputs.privacy || 'public' }}"
+
